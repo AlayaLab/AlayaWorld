@@ -163,8 +163,7 @@ If you find AlayaWorld useful for your research, please cite:
 ## 📄 License
 
 This project is based on LTX-2 by Lightricks Ltd. Portions of the original LTX-2
-codebase (`flash_alaya/ltx2/`) have been modified by Alaya Lab (Shanda AI Research
-Tokyo) for academic and research purposes only, and the released weights
+codebase (`flash_alaya/ltx2/`) have been modified by Alaya Lab for academic and research purposes only, and the released weights
 (`merged_infer.safetensors`) are fine-tuned from LTX-2.3. Accordingly, this
 project — code and weights — is released under the
 [**LTX-2 Community License Agreement**](LICENSE). All original copyright, license,
