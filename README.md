@@ -142,7 +142,7 @@ Point `--input` at the prefix. For long (~1 min) rollouts, add `--ttc` to curb a
 - **Core Lead:** Kaipeng Zhang
 - **Lead:** Chuanhao Li
 - **Core Contributors:** Chuanhao Li, Kaipeng Zhang, Yifan Zhan, Yongtao Ge, Yuanyang Yin
-- **Contributors:** Jiaming Tan, Kang He, Liaoyuan Fan, Ruicong Liu, Xiaojie Xu, Xuangeng Chu, Zhen Li, Zhengyuan Lin, Zhixiang Wang, Zian Meng, Zihui Gao
+- **Contributors:** Jiaming Tan, Kang He, Liaoyuan Fan, Mingliang Zhai, Ruicong Liu, Xiaojie Xu, Xuangeng Chu, Zhen Li, Zhengyuan Lin, Zhixiang Wang, Zian Meng, Zihui Gao
 
 ## 📬 Contact
 
