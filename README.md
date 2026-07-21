@@ -5,7 +5,7 @@
 <p align="center">
   <a href="https://alaya-lab.github.io/AlayaWorld/"><img src="https://img.shields.io/badge/Project-Page-blue"></a>
   <a href="https://www.youtube.com/watch?v=n0jIEg7taTI"><img src="https://img.shields.io/badge/YouTube-Demo-red?logo=youtube&logoColor=white"></a>
-  <a href="https://arxiv.org/abs/2607.06291"><img src="https://img.shields.io/badge/Technical-Report-red"></a>
+  <a href="https://github.com/AlayaLab/AlayaWorld/blob/main/assets/alayaworld_tech_report_full.pdf"><img src="https://img.shields.io/badge/Technical-Report-red"></a>
   <a href="https://github.com/AlayaLab/AlayaWorld"><img src="https://img.shields.io/badge/Code-Available-brightgreen?logo=github"></a>
   <a href="https://huggingface.co/AlayaLab/AlayaWorld"><img src="https://img.shields.io/badge/%F0%9F%A4%97%20Weights-HuggingFace-yellow"></a>
 </p>
@@ -20,8 +20,9 @@
 
 ## 📰 News
 
+- **[2026-07-21]** [Full Technical Report](https://github.com/AlayaLab/AlayaWorld/blob/main/assets/alayaworld_tech_report_full.pdf) released.
 - **[2026-07-16]** Inference code released and pretrained weights available on 🤗 [Hugging Face](https://huggingface.co/AlayaLab/AlayaWorld). See [Quick Start](#-quick-start).
-- **[2026-07-08]** Project page and technical report released.
+- **[2026-07-08]** Project page and [technical report](https://arxiv.org/abs/2607.06291) released.
 
 ## 🚀 Release Roadmap
 
