@@ -5,7 +5,8 @@
 <p align="center">
   <a href="https://alaya-lab.github.io/AlayaWorld/"><img src="https://img.shields.io/badge/Project-Page-blue"></a>
   <a href="https://www.youtube.com/watch?v=n0jIEg7taTI"><img src="https://img.shields.io/badge/YouTube-Demo-red?logo=youtube&logoColor=white"></a>
-  <a href="https://github.com/AlayaLab/AlayaWorld/blob/main/assets/alayaworld_tech_report_full.pdf"><img src="https://img.shields.io/badge/Technical-Report-red"></a>
+  <a href="https://arxiv.org/abs/2607.06291"><img src="https://img.shields.io/badge/Intro-Report-red"></a>
+  <a href="https://arxiv.org/abs/2607.18367"><img src="https://img.shields.io/badge/Full-Report-red"></a>
   <a href="https://github.com/AlayaLab/AlayaWorld"><img src="https://img.shields.io/badge/Code-Available-brightgreen?logo=github"></a>
   <a href="https://huggingface.co/AlayaLab/AlayaWorld"><img src="https://img.shields.io/badge/%F0%9F%A4%97%20Weights-HuggingFace-yellow"></a>
 </p>
@@ -20,7 +21,7 @@
 
 ## 📰 News
 
-- **[2026-07-21]** [Full Technical Report](https://github.com/AlayaLab/AlayaWorld/blob/main/assets/alayaworld_tech_report_full.pdf) released.
+- **[2026-07-21]** [Full Technical Report](https://arxiv.org/abs/2607.18367) released.
 - **[2026-07-16]** Inference code released and pretrained weights available on 🤗 [Hugging Face](https://huggingface.co/AlayaLab/AlayaWorld). See [Quick Start](#-quick-start).
 - **[2026-07-08]** Project page and [technical report](https://arxiv.org/abs/2607.06291) released.
 
@@ -153,10 +154,17 @@ For collaboration or business inquiries, contact **kaipeng.zhang@shanda.com**.
 If you find AlayaWorld useful for your research, please cite:
 
 ```bibtex
-@article{team2026alayaworld,
+@article{team2026alayaworldintro,
   title={AlayaWorld: Long-Horizon and Playable Video World Generation},
   author={Team, AlayaWorld and Zhang, Kaipeng and Li, Chuanhao and Zhan, Yifan and Ge, Yongtao and Yin, Yuanyang and Tan, Jiaming and He, Kang and Fan, Liaoyuan and Liu, Ruicong and others},
   journal={arXiv preprint arXiv:2607.06291},
+  year={2026}
+}
+
+@article{team2026alayaworldfull,
+  title={AlayaWorld: Long-Horizon and Playable Video World Generation},
+  author={Team, AlayaWorld and Zhang, Kaipeng and Li, Chuanhao and Zhan, Yifan and Ge, Yongtao and Yin, Yuanyang and Tan, Jiaming and He, Kang and Fan, Liaoyuan and Liu, Ruicong and Zhai, Mingliang and others},
+  journal={arXiv preprint arXiv:2607.18367},
   year={2026}
 }
 ```
