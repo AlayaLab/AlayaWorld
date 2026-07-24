@@ -1,6 +1,6 @@
 # AlayaWorld: Long-Horizon and Playable Video World Generation
 
-<p align="center"><a href="https://alaya-lab.github.io/AlayaLab/"><b>Alaya Lab</b></a></p>
+<p align="center"><a href="https://alayalab.ai/"><b>Alaya Lab</b></a></p>
 
 <p align="center">
   <a href="https://alaya-lab.github.io/AlayaWorld/"><img src="https://img.shields.io/badge/Project-Page-blue"></a>
