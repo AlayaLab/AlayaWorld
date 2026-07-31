@@ -3,6 +3,11 @@
 <p align="center"><a href="https://alayalab.ai/"><b>Alaya Lab</b></a></p>
 
 <p align="center">
+  <a href="README.md"><img src="https://img.shields.io/badge/English-2563eb?style=for-the-badge"></a>
+  <a href="README_zh.md"><img src="https://img.shields.io/badge/%E4%B8%AD%E6%96%87-e5e7eb?style=for-the-badge"></a>
+</p>
+
+<p align="center">
   <a href="https://alaya-lab.github.io/AlayaWorld/"><img src="https://img.shields.io/badge/Project-Page-blue"></a>
   <a href="https://www.youtube.com/watch?v=n0jIEg7taTI"><img src="https://img.shields.io/badge/YouTube-Demo-red?logo=youtube&logoColor=white"></a>
   <a href="https://arxiv.org/abs/2607.06291"><img src="https://img.shields.io/badge/Intro-Report-red"></a>
@@ -29,6 +34,7 @@
 
 - [x] Inference code
 - [x] Pretrained weights — 🤗 [AlayaLab/AlayaWorld](https://huggingface.co/AlayaLab/AlayaWorld)
+- [ ] Pretrained weights (improved)
 - [ ] Training code
 - [ ] Training data (partial)
 
