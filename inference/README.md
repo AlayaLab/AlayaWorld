@@ -1,3 +1,8 @@
+<p align="right">
+  <kbd><b>English</b></kbd>
+  <kbd><a href="README_zh.md">简体中文</a></kbd>
+</p>
+
 # Alaya World — Inference (Image-to-Video)
 
 Official inference entry for **Alaya World**, an autoregressive interactive
@@ -11,7 +16,7 @@ follows the camera path, one chunk at a time.
 
 ## Requirements
 
-- A CUDA GPU. PyTorch **≥ 2.6** (the DiT uses `flex_attention`).
+- A CUDA GPU. PyTorch **≥ 2.7.1** (the DiT uses `flex_attention`).
 - Model weights under `./checkpoints/` (relative to the repo root), configured in
   `configs/infer.yaml` under `paths:`:
 
@@ -81,15 +86,17 @@ when the case ships a `<prefix>_skill.txt` (disable with `--skill-sec 0`).
 | `--no-joystick` | *(config)* | do not draw the joystick HUD |
 | `--ttc` | *(off)* | Pathwise Test-Time Correction — curbs appearance drift over long rollouts |
 | `--video-crf` | `28` | h264 quality (18 near-lossless, 28 small) |
-| `--skill-sec` | `3.0` | switch to the case's `_skill.txt` prompt for the final N seconds (one-off end effect); `0` disables |
+| `--skill-sec` | `4.0` | switch to the case's `_skill.txt` prompt for the final N seconds (one-off end effect); `0` disables |
 | `--skill-prompt` | *(file)* | inline skill caption, overrides `<prefix>_skill.txt` |
 
 Run `python -m inference.run --help` for the full list.
 
 ## Notes
 
-- This CLI is a thin wrapper over the `flash_alaya` engine — it reuses the
-  engine's rollout helpers and streaming pipeline unchanged.
+- This CLI is a thin wrapper over the `alaya.inference` engine — it reuses the
+  engine's rollout helpers and streaming pipeline unchanged. The same run is
+  also available in the unified config form: `CONFIG_PATH=configs/infer.yaml
+  bash scripts/finetune/train.sh` (knobs under `da3_infer:`).
 - For long (~1 min) rollouts, `--ttc` re-anchors each chunk to the first frame
   to reduce appearance/style drift; tune its knobs under `validation.ttc` in the
   config.

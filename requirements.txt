@@ -1,39 +1,25 @@
-# AlayaWorld — inference requirements (pinned, verified end-to-end).
-#
-# Install the torch stack FIRST, from a CUDA wheel index matching your driver
-# (example below is CUDA 12.4). torch/torchvision/torchaudio/xformers must all
-# come from the same index or their compiled ops mismatch at runtime.
-#
-#   pip install --index-url https://download.pytorch.org/whl/cu124 \
-#       --extra-index-url https://pypi.org/simple \
-#       torch==2.6.0 torchvision==0.21.0 torchaudio==2.6.0 xformers==0.0.29.post2
-#   pip install -r requirements.txt
-#
-# NOTE: keep --extra-index-url — the CUDA index alone can't resolve pure-python
-# deps like typing-extensions, so torch install fails without a PyPI fallback.
-
-torch==2.6.0
-torchvision==0.21.0
-torchaudio==2.6.0
-xformers==0.0.29.post2
-
-numpy>=1.24,<2
+# AlayaWorld — unified requirements (training + all three inference paths).
+# Versions are lower bounds verified end-to-end on torch 2.7.1 + CUDA 12.8.
+torch>=2.7.1
+torchvision
+transformers>=4.51
+safetensors
+diffusers
+accelerate
+einops
+PyYAML
+numpy
 scipy
-safetensors>=0.4
-einops>=0.7
-diffusers==0.39.0
-transformers==5.13.1
-peft>=0.17
-bitsandbytes>=0.45
 opencv-python
-pyyaml
+imageio
+imageio-ffmpeg
+Pillow
 tqdm
-easydict
+decord
 huggingface-hub
-
-# Depth-Anything-3 (spatial-memory depth) — required, and it is a code repo, not
-# a PyPI package. Install it AFTER the pins above (so its own unpinned deps don't
-# clobber the torch stack):
-#     pip install -e checkpoints/Depth-Anything-3
-# That editable install pulls all of DA3's runtime deps (omegaconf, open3d, e3nn,
-# moviepy==1.0.3, plyfile, pycolmap, trimesh, evo, ...) — don't re-list them here.
+# Optional acceleration: flash-attn (FA2); flash-attn-3 (Hopper) must be built yourself.
+#
+# Depth-Anything-3 (spatial-memory depth for the da3 inference path) is a code
+# repo, not a PyPI package. Install it AFTER the pins above:
+#     git clone https://github.com/ByteDance-Seed/Depth-Anything-3 third_party/Depth-Anything-3
+#     pip install -e third_party/Depth-Anything-3

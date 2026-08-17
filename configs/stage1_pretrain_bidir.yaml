@@ -1,0 +1,132 @@
+# ============================================================================
+# Stage 1: bidirectional pretraining (full fine-tune, 20s clips).
+#
+# memory / dmd / next_forcing / spatial are disabled, so this dispatches to RolloutTrainer and
+# reduces to plain diffusion velocity-MSE SFT.
+# Full fine-tune: training.mode=sft with lora.enabled=false.
+# Run: python -m alaya.train --config configs/stage1_pretrain_bidir.yaml
+# ============================================================================
+
+run:
+  name: stage1_pretrain_bidir
+  seed: 42
+  output_dir: ./outputs/stage1_pretrain_bidir
+  log_dir: ./logs/stage1_pretrain_bidir
+
+paths:
+  base_transformer: weights/ltx-2.3/ltx-2.3-22b-dev.safetensors
+  vae: weights/ltx-2.3/ltx-2.3-22b-dev.safetensors
+  gemma: weights/ltx-2.3/google/gemma-3-12b-it-qat-q4_0-unquantized
+  video_base_dir: data/Video
+  annotation_base_dir: data/Annotation
+
+data:
+  # Sekai-Real-Walking-HQ only (18208 clips, 60s @30fps; captions carry overall + segments)
+  sources:
+    sekai_real_hq: 1.0
+  overall_caption_prob: 0.1  # 0.1 = 10% whole-clip captions, 90% per-segment sub-clip captions
+  camera_drop_content_prob: 0.1  # probability of dropping the camera description from the prompt
+  use_cache: true
+  skip_file_check: true
+  abstract_caption_prob: 0.0
+  require_camera: false
+  camera_norm_mode: none
+  camera_post_relic_scale: 1.0
+
+sample:
+  height: 544
+  width: 960
+  fps: 24.0
+  temporal_stride: 8
+
+layout:
+  sink_latent_frames: 0
+  max_gap_sec: 0.0
+  history_latent_frames: 0  # bidirectional stage: no history conditioning
+  # Variable-length: segments shorter than 20s train at their natural length instead of
+  # being rejected for being shorter than min_frames.
+  variable_length: true
+  condition:
+    # inline: condition frames are a clean prefix of the same K-frame sequence;
+    # loss is computed on generated frames only, so v2v works within a single clip.
+    type: inline
+    i2v_prob: 0.7  # image-to-video conditioning probability
+    v2v_prob: 0.2  # video-to-video probability (the remainder is text-only)
+    v2v_ratio_min: 0.2
+    v2v_ratio_max: 0.6
+  output:
+    latent_frames: [61]  # 481 pixel frames = 61 latents (the whole 20s clip is denoised at once)
+    probs: [1.0]
+
+training:
+  mode: sft  # full fine-tune (no LoRA)
+  adaptive_sigma_shift: true
+  adaptive_shift_m_lo: 5.0
+  adaptive_shift_m_hi: 30.0
+  adaptive_shift_frame_lo: 8
+  adaptive_shift_frame_hi: 121
+
+lora:
+  enabled: false
+
+optimizer:
+  batch_size: 1
+  lr: 1.0e-5
+  weight_decay: 0.001
+  epochs: 100
+  max_grad_norm: 1.0
+  warmup_steps: 200
+  checkpoint_steps: 500  # save a checkpoint every N steps
+  max_checkpoints: 10
+  log_steps: 1
+  max_steps:
+
+validation:
+  enabled: true
+  before_train: true  # emit a baseline generation before training starts
+  interval: 500
+  first_step: 0
+  max_samples: 1
+  dynamic_rounds: true
+  sampling_steps: 30
+  scheduler: shift
+  cfg_scale: 3.0
+  stg_scale: 1.0
+  stg_blocks: [28]
+  rescale_scale: 0.7
+  save_videos: true
+  save_joystick: false  # no action control in this stage
+  video_history_latent_frames: 0
+  modes:
+    # No action / history / spatial condition here: single-shot i2v generation
+    # (rollout_rounds=1; condition_latent_frames=1 keeps the first frame clean).
+    i2v_gen_sekai_hq:
+      dataset:
+        source: sekai_real_hq
+      layout:
+        condition: i2v
+        output_latent_frames: 21
+        condition_latent_frames: 1
+        history_latent_frames: 0
+        max_gap_sec: 0.0
+        height: 544
+        width: 960
+      control: []
+      rollout_rounds: 1
+
+runtime:
+  dtype: bf16
+  text_embed_cache_entries: 4096  # in-process LRU for text embeddings (0 = off); a hit skips the text encoder
+  text_embed_cache_dir: cache/text_embed_ltx23  # on-disk text-embedding cache, shared across stages and restarts
+  precache_text_embeds: false  # false = fill the disk cache lazily during training (a miss writes through)
+  vae_latent_cache_dir: cache/vae_latent_ltx23_544x960  # whole-clip latent cache: the first 17 latents are encoded fresh, the tail is sliced from cache
+  attention_type: flash_attention_3
+  gradient_checkpointing: true
+  vae_chunk_size: 33
+  dataloader_workers: 2
+  dataloader_pin_memory: false
+  dataloader_prefetch_factor: 2
+  fsdp: true
+  norm_by_fps: true
+  norm_by_max_frames: true
+  positional_embedding_max_pos: 20,2048,2048

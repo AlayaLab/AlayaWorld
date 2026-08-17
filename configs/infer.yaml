@@ -1,12 +1,12 @@
 run:
   output_dir: ./outputs
-paths:                                                         # all weights live under ./checkpoints/ (relative to repo root)
-  model: ./checkpoints/merged_infer.safetensors                # holds DiT + VAE + text-enc + history_encoder.* (read once, shared)
+paths:
+  model: ./checkpoints/merged_infer.safetensors
   gemma: ./checkpoints/gemma-3-12b-it-qat-q4_0-unquantized
-  da3_repo: ./checkpoints/Depth-Anything-3                      # DA3 code repo (spatial-memory depth)
-  da3_model: depth-anything/DA3NESTED-GIANT-LARGE-1.1           # DA3 HF weights id (resolved in da3_cache)
-  da3_cache: ./checkpoints/hf_cache                             # HF cache holding the DA3 weights
-  taehv: ./checkpoints/taeltx2_3_wide.pth                       # tiny bank decoder (only with --bank-taehv)
+  da3_repo: ./checkpoints/Depth-Anything-3
+  da3_model: depth-anything/DA3NESTED-GIANT-LARGE-1.1
+  da3_cache: ./checkpoints/hf_cache
+  taehv: ./checkpoints/taeltx2_3_wide.pth
 sample:
   height: 544
   width: 960
@@ -76,9 +76,11 @@ validation:
   stg_blocks: []
   rescale_scale: 0.0
   video_history_latent_frames: 16
-  # Pathwise Test-Time Correction params (applied only when run.py is given --ttc).
   ttc:
-    levels: [750, 500, 250]
+    levels:
+    - 750
+    - 500
+    - 250
     strength: 1.0
     ref_action: false
   modes:
@@ -100,7 +102,11 @@ runtime:
   gradient_checkpointing: true
   vae_chunk_size: 33
   vae_decode_chunk_latents: 8
-  vae_decode_overlap_latents: 6      # 双侧 overlap-tiling 无缝解码 (>= VAE 时序感受野 ~6 → 与整段逐帧等价)
+  vae_decode_overlap_latents: 6
   norm_by_fps: true
   norm_by_max_frames: true
   positional_embedding_max_pos: 20,2048,2048
+da3_infer:
+  enabled: true
+  input: playground/case1/case1
+  rounds: 45

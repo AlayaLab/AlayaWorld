@@ -1,7 +1,7 @@
 """Alaya World — official image-to-video (i2v) inference entry.
 
 This is the outward-facing CLI for external users. It is a thin wrapper over the
-`flash_alaya` engine: it reuses the engine's rollout helpers and streaming
+`alaya.inference` engine: it reuses the engine's rollout helpers and streaming
 pipeline unchanged, and only wires up an i2v-oriented command line + sensible
 defaults. No engine logic is copied here.
 
@@ -39,9 +39,9 @@ from pathlib import Path
 import torch
 import torch.distributed as dist
 
-from flash_alaya.alaya.config.loader import load_config
-from flash_alaya.utils.pipeline import FlashAlayaPipeline
-from flash_alaya.utils.rollout_utils import (
+from alaya.config.loader import load_config
+from alaya.inference.pipeline import FlashAlayaPipeline
+from alaya.inference.rollout_utils import (
     apply_joystick_overlay,
     bootstrap_context_parallel,
     build_engine,
@@ -144,8 +144,11 @@ def parse_args() -> argparse.Namespace:
     return p.parse_args()
 
 
-def main() -> None:
-    args = parse_args()
+def main(args: argparse.Namespace | None = None) -> None:
+    # args=None: CLI mode (parse argv). A pre-built namespace is passed by the
+    # unified config entry (alaya.train dispatch on da3_infer.enabled).
+    if args is None:
+        args = parse_args()
     flex_attn = args.flex_attn and args.compile != "none"
     if args.flex_attn and not flex_attn:
         print("[AlayaWorld] --compile none: flex-attn off (eager math fallback)", flush=True)

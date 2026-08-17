@@ -1,156 +1,151 @@
-# ===== Large runtime directories =====
-output/
-backup/
-outputs/
-outputs_*/
-logs/
-logs_*/
-*.log
-*.log.*
 
-# ===== Local agent metadata =====
-.agents/
-.codex/
-
-# ===== Temporary code =====
-tmp_codes/
-scripts/inference/tmp_codes/
-**/tmp_codes/
-tmp/
-tmp_*/
-
-# ===== Model weights / data =====
-# Merged inference weights live under checkpoints/ (user downloads/symlinks them
-# in; never committed). See inference/README.md for how to obtain them.
-checkpoints/
-*.sh
-*.safetensors
-*.pt
-*.pth
-*.bin
-*.ckpt
-*.onnx
-*.pkl
-*.npy
-*.npz
-
-# ===== Generated media =====
-*.mp4
-*.avi
-*.mov
-*.mkv
-*.webm
-*.gif
-*.wav
-*.mp3
-*.flac
-
-# ===== Python =====
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
-*.egg
-*.egg-info/
-dist/
-build/
-develop-eggs/
-eggs/
-.eggs/
-wheels/
-*.whl
-pip-log.txt
-pip-delete-this-directory.txt
-
-# ===== Virtual environments =====
-venv/
-env/
-.env
-.venv/
-ENV/
-env.bak/
-venv.bak/
-
-# ===== IDE / editors =====
-.vscode/
-.idea/
-*.swp
-*.swo
-*.swn
 *~
-.project
-.pydevproject
-.settings/
-
-# ===== OS files =====
-.DS_Store
-.DS_Store?
 ._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
-desktop.ini
-
-# ===== Jupyter / IPython =====
-.ipynb_checkpoints/
-*.ipynb_checkpoints
-profile_default/
-ipython_config.py
-
-# ===== Test / coverage =====
-.pytest_cache/
+*$py.class
+.agents/
+*.avi
+backup/
+bak/
+benchmarks/
+*.bin
+build/
+.cache/
+cache/
+# (candidate-selection pools like select_*, staging, etc.) is internal.
+**/checkpoint-*/
+checkpoints/
+*.ckpt
+.claude/
+# Claude Code local skills/config (not committed)
+CLAUDE.md
+.codex/
+# ===== Config / secrets =====
+*.cover
 .coverage
 .coverage.*
-htmlcov/
-.tox/
-.nox/
 coverage.xml
-*.cover
-
-# ===== Type-check / lint caches =====
-.mypy_cache/
-.pyre/
-.pytype/
-.ruff_cache/
-
-# ===== Experiment tracking =====
-wandb/
-mlruns/
-lightning_logs/
-runs/
-checkpoints/
-**/checkpoint-*/
-
-# ===== Config / secrets =====
-.env.local
-.env.*.local
-*.key
-*.pem
-secrets.yaml
-secrets.json
-
-# ===== Other common caches =====
-.cache/
-.local/
-node_modules/
-
-# Claude Code local skills/config (not committed)
-.claude/
-# Internal task-definition / working notes (not for publish)
-CLAUDE.md
-# DLC job records + logs (local runtime)
-dlc/
-
-# ===== Internal operational tools / scratch (never published) =====
-bak/
-# Internal reference clips / example assets (not for publish; used by bak/ tooling)
+data/
 demo/
-# playground: publish ONLY case1/case2 (un-ignored below); everything else there
-# (candidate-selection pools like select_*, staging, etc.) is internal.
-playground/*
-
-# ===== Open-source deliverable: keep these despite the broad *.sh / *.pt rules above =====
+desktop.ini
+develop-eggs/
+dist/
+dlc/
+# DLC job records + logs (local runtime)
+docs/camera_6d_distribution_all_datasets_no_relic/
+.DS_Store
+.DS_Store?
+*.egg
+*.egg-info/
+.eggs/
+eggs/
+ehthumbs.db
+.env
+env/
+ENV/
+env.bak/
+.env.*.local
+.env.local
+eval_sets/
+# ===== Experiment tracking =====
+*.flac
+# ===== Generated analysis docs =====
+# ===== Generated media =====
+*.gif
+htmlcov/
+.idea/
+# ===== IDE / editors =====
 !inference/run.sh
+# in; never committed). See inference/README.md for how to obtain them.
+# ===== Internal operational tools / scratch (never published) =====
+# Internal reference clips / example assets (not for publish; used by bak/ tooling)
+# Internal task-definition / working notes (not for publish)
+*.ipynb_checkpoints
+.ipynb_checkpoints/
+ipython_config.py
+# ===== Jupyter / IPython =====
+*.key
+# ===== Large runtime directories =====
+lightning_logs/
+.local/
+# ===== Local agent metadata =====
+*.log
+*.log.*
+logs/
+logs_*/
+# Merged inference weights live under checkpoints/ (user downloads/symlinks them
+*.mkv
+mlruns/
+# ===== Model weights / data =====
+*.mov
+*.mp3
+*.mp4
+.mypy_cache/
+node_modules/
+.nox/
+*.npy
+*.npz
+*.onnx
+# ===== Open-source deliverable: keep these despite the broad *.sh / *.pt rules above =====
+# ===== OS files =====
+# ===== Other common caches =====
+output/
+outputs/
+outputs_*/
+*.pem
+pip-delete-this-directory.txt
+pip-log.txt
+*.pkl
+playground/*
 !playground/case*/
 !playground/case*/*_camera.pt
+# playground: publish ONLY case1/case2 (un-ignored below); everything else there
+profile_default/
+.project
+*.pt
+*.pth
+__pycache__/
+*.py[cod]
+.pydevproject
+.pyre/
+.pytest_cache/
+# ===== Python =====
+.pytype/
+.ruff_cache/
+runs/
+*.safetensors
+scripts/inference/tmp_codes/
+secrets.json
+secrets.yaml
+.settings/
+*.sh
+*.so
+.Spotlight-V100
+*.swn
+*.swo
+*.swp
+# ===== Temporary code =====
+# ===== Test / coverage =====
+third_party/
+Thumbs.db
+tmp/
+tmp_*/
+**/tmp_codes/
+tmp_codes/
+.tox/
+.Trashes
+# ===== Type-check / lint caches =====
+.venv/
+venv/
+venv.bak/
+# ===== Virtual environments =====
+.vscode/
+wandb/
+*.wav
+*.webm
+weights/
+# ===== Weights / datasets / caches (place them here; never commit) =====
+wheels/
+*.whl
+
+# weights symlink (points at local storage)
+checkpoints

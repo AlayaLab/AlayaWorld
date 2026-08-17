@@ -12,8 +12,9 @@
   <a href="https://www.youtube.com/watch?v=n0jIEg7taTI"><img src="https://img.shields.io/badge/YouTube-Demo-red?logo=youtube&logoColor=white"></a>
   <a href="https://arxiv.org/abs/2607.06291"><img src="https://img.shields.io/badge/Intro-Report-red"></a>
   <a href="https://arxiv.org/abs/2607.18367"><img src="https://img.shields.io/badge/Full-Report-red"></a>
+  <a href="https://arxiv.org/abs/2608.13492"><img src="https://img.shields.io/badge/v1.1-Report-red"></a>
   <a href="https://github.com/AlayaLab/AlayaWorld"><img src="https://img.shields.io/badge/Code-Available-brightgreen?logo=github"></a>
-  <a href="https://huggingface.co/AlayaLab/AlayaWorld"><img src="https://img.shields.io/badge/%F0%9F%A4%97%20Weights-HuggingFace-yellow"></a>
+  <a href="#weights"><img src="https://img.shields.io/badge/%F0%9F%A4%97%20Weights-HuggingFace-yellow"></a>
 </p>
 
 <p align="center">
@@ -26,6 +27,7 @@
 
 ## 📰 News
 
+- **[2026-08-17]** Full-stack **training + inference code**, **v1.1 weights** (AR + DMD) and **partial training data** open-sourced, with the [v1.1 technical report](https://arxiv.org/abs/2608.13492). See the [Release Roadmap](#-release-roadmap).
 - **[2026-07-21]** [Full Technical Report](https://arxiv.org/abs/2607.18367) released.
 - **[2026-07-16]** Inference code released and pretrained weights available on 🤗 [Hugging Face](https://huggingface.co/AlayaLab/AlayaWorld). See [Quick Start](#-quick-start).
 - **[2026-07-08]** Project page and [technical report](https://arxiv.org/abs/2607.06291) released.
@@ -34,9 +36,9 @@
 
 - [x] Inference code
 - [x] Pretrained weights — 🤗 [AlayaLab/AlayaWorld](https://huggingface.co/AlayaLab/AlayaWorld)
-- [ ] Pretrained weights (improved)
-- [ ] Training code
-- [ ] Training data (partial)
+- [x] Pretrained weights v1.1 — AR: 🤗 [AlayaWorld-v1.1-stage2b](https://huggingface.co/AlayaLab/AlayaWorld-v1.1-stage2b) · DMD: 🤗 [AlayaWorld-v1.1-stage3](https://huggingface.co/AlayaLab/AlayaWorld-v1.1-stage3)
+- [x] Training code
+- [x] Training data (partial) — 🤗 [AlayaWorld-v1.1-data](https://huggingface.co/datasets/AlayaLab/AlayaWorld-v1.1-data)
 
 ## ✨ Core Properties
 
@@ -54,95 +56,103 @@ Long-horizon stability from training on drifted histories and an error bank that
 ### ⚡ Runtime
 Real-time interaction via few-step DMD distillation and short temporal chunks, with prompt switching at chunk boundaries to minimize both visual and semantic latency.
 
+## 📁 Repository Layout
+
+```
+alaya/          world-model core: config / data / memory / model / trainers
+                └── inference/   the da3 streaming case-demo pipeline
+ltx2/           LTX-2.3 model stack (DiT / VAE / text encoder / camera control)
+fastvideo/      dataset + rollout utilities shared by training
+scripts/        finetune/train.sh (unified launcher) · infer/ helpers · tools/
+configs/        stage0–stage3 training + three inference configs
+inference/      da3 case-demo CLI entry (run.sh / run.py)
+playground/     bundled demo case (case1)
+docs/vigeo/     full training handbook (data format, stages, knobs)
+```
+
+One launcher drives everything — training, validation and all three inference
+paths — selected purely by the config:
+
+```bash
+CONFIG_PATH=configs/<any>.yaml bash scripts/finetune/train.sh
+```
+
 ## 🏃 Quick Start
 
-Inference is image-to-video: give the model a **first-frame image**, a **camera trajectory**, and a **text prompt**, and it rolls out a video chunk by chunk along the camera path (1 chunk ≈ 1.33s @ 24fps; ~45 chunks ≈ 1 minute).
-
-**1. Environment** — a CUDA GPU and PyTorch ≥ 2.6 (the DiT uses `flex_attention`).
-
-**2. Weights** — the model runs on four pieces. Only `merged_infer.safetensors`
-(AlayaWorld's own weights) is hosted on our 🤗 repo; the text encoder and the
-depth model are third-party — get them from their original sources:
-
-| Path under `checkpoints/` | Source |
-|---|---|
-| `merged_infer.safetensors` — DiT + VAE + text-encoder + history-encoder bundle | 🤗 [AlayaLab/AlayaWorld](https://huggingface.co/AlayaLab/AlayaWorld) |
-| `gemma-3-12b-it-qat-q4_0-unquantized/` — Gemma text encoder | 🤗 [google/gemma-3-12b-it-qat-q4_0-unquantized](https://huggingface.co/google/gemma-3-12b-it-qat-q4_0-unquantized) (gated — accept Google's license first) |
-| `Depth-Anything-3/` — DA3 code repo | GitHub [ByteDance-Seed/Depth-Anything-3](https://github.com/ByteDance-Seed/Depth-Anything-3) (see step 3) |
-| `hf_cache/` — DA3 weights, in HF-cache layout | 🤗 [depth-anything/DA3NESTED-GIANT-LARGE-1.1](https://huggingface.co/depth-anything/DA3NESTED-GIANT-LARGE-1.1) (see step 3) |
-| `taeltx2_3_wide.pth` — *optional* TAEHV bank decoder (`--bank-taehv`) | GitHub [madebyollin/taehv](https://github.com/madebyollin/taehv) |
-
-From the repo root:
+**1. Environment** — one Python env covers training and all inference paths
+(verified on torch 2.7.1 + CUDA 12.8):
 
 ```bash
-# AlayaWorld weights (this repo)
-hf download AlayaLab/AlayaWorld merged_infer.safetensors --local-dir checkpoints
-
-# Gemma text encoder (gated: log in + accept the license on its HF page first)
-hf download google/gemma-3-12b-it-qat-q4_0-unquantized \
-  --local-dir checkpoints/gemma-3-12b-it-qat-q4_0-unquantized
+pip install -r requirements.txt
+# Depth-Anything-3 (da3 inference path) is a code repo, install after the pins:
+git clone https://github.com/ByteDance-Seed/Depth-Anything-3 third_party/Depth-Anything-3
+pip install -e third_party/Depth-Anything-3
 ```
 
-Target layout (`paths:` in `configs/infer.yaml` points here; repoint it if your
-weights live elsewhere):
+<a id="weights"></a>
+**2. Weights**
 
-```
-checkpoints/
-├── merged_infer.safetensors
-├── gemma-3-12b-it-qat-q4_0-unquantized/
-├── Depth-Anything-3/          # step 3
-├── hf_cache/                  # step 3
-└── taeltx2_3_wide.pth         # optional
-```
+| Piece | Used by | Source |
+|---|---|---|
+| `merged_infer.safetensors` — DiT+VAE+text-enc+history-enc bundle | da3 inference | 🤗 [AlayaLab/AlayaWorld](https://huggingface.co/AlayaLab/AlayaWorld) |
+| LTX-2.3 base (`ltx-2.3-22b-dev.safetensors`) | training, AR/DMD inference | 🤗 [Lightricks/LTX-2](https://huggingface.co/Lightricks/LTX-2) |
+| AR teacher v1.1 (stage2b, full transformer) | AR inference, stage3 training | 🤗 [AlayaWorld-v1.1-stage2b](https://huggingface.co/AlayaLab/AlayaWorld-v1.1-stage2b) |
+| Few-step student v1.1 (stage3 LoRA) | DMD inference | 🤗 [AlayaWorld-v1.1-stage3](https://huggingface.co/AlayaLab/AlayaWorld-v1.1-stage3) |
+| Gemma text encoder | everything | 🤗 [google/gemma-3-12b-it-qat-q4_0-unquantized](https://huggingface.co/google/gemma-3-12b-it-qat-q4_0-unquantized) (gated) |
+| ViGeo checkpoint (ViGeo1.1) | training, AR/DMD inference | 🤗 [pkqbajng/ViGeo1.1](https://huggingface.co/pkqbajng/ViGeo1.1) (code: [aigc3d/ViGeo](https://github.com/aigc3d/ViGeo)) |
+| Depth-Anything-3 weights | da3 inference | 🤗 [depth-anything/DA3NESTED-GIANT-LARGE-1.1](https://huggingface.co/depth-anything/DA3NESTED-GIANT-LARGE-1.1) |
 
-**3. Depth-Anything-3 (required)** — the spatial-memory branch depends on DA3, an
-external repo (inference errors out without it):
+Weight paths live under `paths:` in each config — repoint them to where your
+downloads sit. See [`docs/vigeo/README.md`](docs/vigeo/README.md) for the full
+layout.
+
+**3. Inference** — three paths, one launch form:
 
 ```bash
-git clone https://github.com/ByteDance-Seed/Depth-Anything-3 checkpoints/Depth-Anything-3
-pip install -e checkpoints/Depth-Anything-3      # run AFTER installing the torch stack (see requirements.txt)
+# a) case demo (da3 spatial memory): first-frame image + camera.pt + prompt -> ~1 min video
+CONFIG_PATH=configs/infer.yaml bash scripts/finetune/train.sh
+#    equivalent CLI shortcut with per-run flags (seed / rounds / ttc / skill):
+bash inference/run.sh                     # bundled playground/case1
+python -m inference.run --input playground/case1/case1 --seed 1234 --rounds 45
+
+# b) autoregressive teacher, 30-step (vigeo spatial memory)
+VALIDATE_ONLY=1 CONFIG_PATH=configs/infer_i2v_camera_ar.yaml bash scripts/finetune/train.sh
+
+# c) few-step student, 4-step (vigeo spatial memory)
+VALIDATE_ONLY=1 CONFIG_PATH=configs/infer_i2v_camera.yaml bash scripts/finetune/train.sh
 ```
 
-Its weights (`depth-anything/DA3NESTED-GIANT-LARGE-1.1`) load from
-`checkpoints/hf_cache/` — either let them download there on first run, or fetch
-them ahead of time:
+Notes: b/c run through the trainer's validation loop, so they need
+`VALIDATE_ONLY=1`; a) dispatches straight to the inference pipeline
+(`da3_infer.enabled` in the config) and ignores it. The vigeo spatial path is
+incompatible with FA3 — launch with `ALAYA_USE_FA3=0` if you built FA3.
 
-```bash
-HF_HOME=checkpoints/hf_cache hf download depth-anything/DA3NESTED-GIANT-LARGE-1.1
-```
+Full CLI option list for a): [`inference/README.md`](inference/README.md).
 
-**4. Run a ready-made case** (cases live under [`playground/`](playground)).
-The one-command launcher renders the bundled **case1** (~1 min):
-
-```bash
-# single GPU
-bash inference/run.sh
-
-# multi-GPU (Ulysses context parallel; e.g. 2 or 4 GPUs)
-GPUS=4 bash inference/run.sh
-```
-
-`run.sh` just forwards to `python -m inference.run` (defaulting to
-`--input playground/case1/case1`); call the module directly to run any case or
-pass extra flags:
-
-```bash
-PYTORCH_ALLOC_CONF=expandable_segments:True \
-  python -m inference.run --input playground/case1/case1 --seed 1234
-```
-
-The result mp4 is written under `outputs/`. See [`inference/README.md`](inference/README.md)
-for the full option list.
-
-**5. Use your own input** — a "case" is three files sharing a prefix:
+For b/c on your own image + trajectory, `scripts/infer/generate_video.sh`
+prepares the inputs (`--image/--prompt` plus `--extrinsics` or `--synth-frames`)
+and launches c) in one go. A case for a) is three files sharing a prefix:
 
 ```
 <prefix>_image.png     first frame (seeds the history)
 <prefix>_camera.pt     camera trajectory: cam_c2w [F,4,4] + intrinsics
 <prefix>_prompt.txt    text prompt
+<prefix>_skill.txt     (optional) prompt for the final seconds (one-off end effect)
 ```
 
-Point `--input` at the prefix. For long (~1 min) rollouts, add `--ttc` to curb appearance drift. See [`inference/README.md`](inference/README.md) for the full option list.
+**4. Training** — four stages, same launcher; each stage's `paths:` points at
+the previous stage's checkpoint:
+
+```bash
+CONFIG_PATH=configs/stage0_precache.yaml      bash scripts/finetune/train.sh  # VAE-latent + text-embed cache
+CONFIG_PATH=configs/stage1_pretrain_bidir.yaml bash scripts/finetune/train.sh # bidirectional pretrain
+CONFIG_PATH=configs/stage2a_histpretrain.yaml bash scripts/finetune/train.sh  # history-encoder pretrain
+CONFIG_PATH=configs/stage2b_arsft_vigeo.yaml  bash scripts/finetune/train.sh  # autoregressive SFT (ViGeo)
+CONFIG_PATH=configs/stage3_dmd_vigeo.yaml     bash scripts/finetune/train.sh  # few-step DMD distillation
+```
+
+Dataset download, data format, per-stage details and launcher knobs:
+[`docs/vigeo/README.md`](docs/vigeo/README.md).
 
 ## 👥 Team
 
@@ -173,12 +183,18 @@ If you find AlayaWorld useful for your research, please cite:
   journal={arXiv preprint arXiv:2607.18367},
   year={2026}
 }
+@article{team2026alayaworldv11,
+  title={AlayaWorld v1.1: Long-Horizon and Playable Video World Generation},
+  author={Team, AlayaWorld and Zhang, Kaipeng and Li, Chuanhao and Zhan, Yifan and Ge, Yongtao and Yin, Yuanyang and Tan, Jiaming and He, Kang and Fan, Liaoyuan and Liu, Ruicong and Zhai, Mingliang and others},
+  journal={arXiv preprint arXiv:2608.13492},
+  year={2026}
+}
 ```
 
 ## 📄 License
 
 This project is based on LTX-2 by Lightricks Ltd. Portions of the original LTX-2
-codebase (`flash_alaya/ltx2/`) have been modified by Alaya Lab for academic and research purposes only, and the released weights
+codebase (`ltx2/`) have been modified by Alaya Lab for academic and research purposes only, and the released weights
 (`merged_infer.safetensors`) are fine-tuned from LTX-2.3. Accordingly, this
 project — code and weights — is released under the
 [**LTX-2 Community License Agreement**](LICENSE). All original copyright, license,

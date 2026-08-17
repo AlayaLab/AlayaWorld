@@ -12,8 +12,9 @@
   <a href="https://www.youtube.com/watch?v=n0jIEg7taTI"><img src="https://img.shields.io/badge/YouTube-Demo-red?logo=youtube&logoColor=white"></a>
   <a href="https://arxiv.org/abs/2607.06291"><img src="https://img.shields.io/badge/Intro-Report-red"></a>
   <a href="https://arxiv.org/abs/2607.18367"><img src="https://img.shields.io/badge/Full-Report-red"></a>
+  <a href="https://arxiv.org/abs/2608.13492"><img src="https://img.shields.io/badge/v1.1-Report-red"></a>
   <a href="https://github.com/AlayaLab/AlayaWorld"><img src="https://img.shields.io/badge/Code-Available-brightgreen?logo=github"></a>
-  <a href="https://huggingface.co/AlayaLab/AlayaWorld"><img src="https://img.shields.io/badge/%F0%9F%A4%97%20Weights-HuggingFace-yellow"></a>
+  <a href="#weights"><img src="https://img.shields.io/badge/%F0%9F%A4%97%20Weights-HuggingFace-yellow"></a>
 </p>
 
 <p align="center">
@@ -26,6 +27,7 @@
 
 ## 📰 最新动态
 
+- **[2026-08-17]** 开源**全栈训练+推理代码**、**v1.1 权重**(AR + DMD)与**部分训练数据**,同步发布 [v1.1 技术报告](https://arxiv.org/abs/2608.13492)。见[发布路线图](#-发布路线图)。
 - **[2026-07-21]** 发布[完整技术报告](https://arxiv.org/abs/2607.18367)。
 - **[2026-07-16]** 发布推理代码,预训练权重已上线 🤗 [Hugging Face](https://huggingface.co/AlayaLab/AlayaWorld)。参见[快速开始](#-快速开始)。
 - **[2026-07-08]** 发布项目主页与[技术报告](https://arxiv.org/abs/2607.06291)。
@@ -34,9 +36,9 @@
 
 - [x] 推理代码
 - [x] 预训练权重 — 🤗 [AlayaLab/AlayaWorld](https://huggingface.co/AlayaLab/AlayaWorld)
-- [ ] 预训练权重(改进版)
-- [ ] 训练代码
-- [ ] 训练数据(部分)
+- [x] 预训练权重 v1.1 — AR:🤗 [AlayaWorld-v1.1-stage2b](https://huggingface.co/AlayaLab/AlayaWorld-v1.1-stage2b) · DMD:🤗 [AlayaWorld-v1.1-stage3](https://huggingface.co/AlayaLab/AlayaWorld-v1.1-stage3)
+- [x] 训练代码
+- [x] 训练数据(部分)— 🤗 [AlayaWorld-v1.1-data](https://huggingface.co/datasets/AlayaLab/AlayaWorld-v1.1-data)
 
 ## ✨ 核心特性
 
@@ -54,86 +56,97 @@ AlayaWorld 围绕四大核心特性构建 —— **交互性**、**一致性**�
 ### ⚡ 实时性
 通过少步 DMD 蒸馏与短时间 chunk 实现实时交互,并在 chunk 边界处切换提示词,以同时把视觉与语义延迟降到最低。
 
+## 📁 仓库结构
+
+```
+alaya/          世界模型核心:config / data / memory / model / 训练器
+                └── inference/   da3 流式 case-demo 推理管线
+ltx2/           LTX-2.3 模型栈(DiT / VAE / 文本编码器 / 相机控制)
+fastvideo/      训练共用的数据集与 rollout 工具
+scripts/        finetune/train.sh(统一启动器)· infer/ 辅助 · tools/
+configs/        stage0–stage3 训练 + 三条推理配置
+inference/      da3 case-demo 命令行入口(run.sh / run.py)
+playground/     内置演示用例(case1)
+docs/vigeo/     完整训练手册(数据格式、各阶段、启动器参数)
+```
+
+一个启动器驱动一切——训练、验证、三条推理路,全部由配置选择:
+
+```bash
+CONFIG_PATH=configs/<任意>.yaml bash scripts/finetune/train.sh
+```
+
 ## 🏃 快速开始
 
-推理为图生视频(image-to-video):给模型一张**首帧图像**、一条**相机轨迹**和一段**文本提示**,它就会沿相机路径逐 chunk 地展开视频(1 chunk ≈ 1.33 秒 @ 24fps;约 45 chunk ≈ 1 分钟)。
-
-**1. 环境** —— 一块 CUDA GPU,以及 PyTorch ≥ 2.6(DiT 使用了 `flex_attention`)。
-
-**2. 权重** —— 模型由四部分组成。只有 `merged_infer.safetensors`(AlayaWorld 自有权重)托管在我们的 🤗 仓库;文本编码器与深度模型是第三方组件 —— 请从各自的原始来源获取:
-
-| `checkpoints/` 下的路径 | 来源 |
-|---|---|
-| `merged_infer.safetensors` — DiT + VAE + 文本编码器 + 历史编码器 打包 | 🤗 [AlayaLab/AlayaWorld](https://huggingface.co/AlayaLab/AlayaWorld) |
-| `gemma-3-12b-it-qat-q4_0-unquantized/` — Gemma 文本编码器 | 🤗 [google/gemma-3-12b-it-qat-q4_0-unquantized](https://huggingface.co/google/gemma-3-12b-it-qat-q4_0-unquantized)(受限访问 —— 需先接受 Google 的许可协议) |
-| `Depth-Anything-3/` — DA3 代码仓库 | GitHub [ByteDance-Seed/Depth-Anything-3](https://github.com/ByteDance-Seed/Depth-Anything-3)(见第 3 步) |
-| `hf_cache/` — DA3 权重,采用 HF-cache 目录结构 | 🤗 [depth-anything/DA3NESTED-GIANT-LARGE-1.1](https://huggingface.co/depth-anything/DA3NESTED-GIANT-LARGE-1.1)(见第 3 步) |
-| `taeltx2_3_wide.pth` — *可选* TAEHV bank 解码器(`--bank-taehv`) | GitHub [madebyollin/taehv](https://github.com/madebyollin/taehv) |
-
-在仓库根目录下:
+**1. 环境** —— 一个 Python 环境覆盖训练与全部推理(在 torch 2.7.1 + CUDA 12.8 上验证):
 
 ```bash
-# AlayaWorld 权重(本仓库)
-hf download AlayaLab/AlayaWorld merged_infer.safetensors --local-dir checkpoints
-
-# Gemma 文本编码器(受限:需先在其 HF 页面登录并接受许可协议)
-hf download google/gemma-3-12b-it-qat-q4_0-unquantized \
-  --local-dir checkpoints/gemma-3-12b-it-qat-q4_0-unquantized
+pip install -r requirements.txt
+# Depth-Anything-3(da3 推理路径)是代码仓库,在上述依赖之后安装:
+git clone https://github.com/ByteDance-Seed/Depth-Anything-3 third_party/Depth-Anything-3
+pip install -e third_party/Depth-Anything-3
 ```
 
-目标目录结构(`configs/infer.yaml` 中的 `paths:` 指向此处;若你的权重存放在别处,请相应修改):
+<a id="weights"></a>
+**2. 权重**
 
-```
-checkpoints/
-├── merged_infer.safetensors
-├── gemma-3-12b-it-qat-q4_0-unquantized/
-├── Depth-Anything-3/          # 第 3 步
-├── hf_cache/                  # 第 3 步
-└── taeltx2_3_wide.pth         # 可选
-```
+| 组件 | 用于 | 来源 |
+|---|---|---|
+| `merged_infer.safetensors` — DiT+VAE+文本编码器+历史编码器 打包 | da3 推理 | 🤗 [AlayaLab/AlayaWorld](https://huggingface.co/AlayaLab/AlayaWorld) |
+| LTX-2.3 底座(`ltx-2.3-22b-dev.safetensors`)| 训练、AR/DMD 推理 | 🤗 [Lightricks/LTX-2](https://huggingface.co/Lightricks/LTX-2) |
+| AR teacher v1.1(stage2b,完整 transformer)| AR 推理、stage3 训练 | 🤗 [AlayaWorld-v1.1-stage2b](https://huggingface.co/AlayaLab/AlayaWorld-v1.1-stage2b) |
+| 少步 student v1.1(stage3 LoRA)| DMD 推理 | 🤗 [AlayaWorld-v1.1-stage3](https://huggingface.co/AlayaLab/AlayaWorld-v1.1-stage3) |
+| Gemma 文本编码器 | 全部 | 🤗 [google/gemma-3-12b-it-qat-q4_0-unquantized](https://huggingface.co/google/gemma-3-12b-it-qat-q4_0-unquantized)(受限)|
+| ViGeo checkpoint(ViGeo1.1)| 训练、AR/DMD 推理 | 🤗 [pkqbajng/ViGeo1.1](https://huggingface.co/pkqbajng/ViGeo1.1)(代码:[aigc3d/ViGeo](https://github.com/aigc3d/ViGeo))|
+| Depth-Anything-3 权重 | da3 推理 | 🤗 [depth-anything/DA3NESTED-GIANT-LARGE-1.1](https://huggingface.co/depth-anything/DA3NESTED-GIANT-LARGE-1.1) |
 
-**3. Depth-Anything-3(必需)** —— 空间记忆分支依赖 DA3(一个外部仓库),缺少它推理会直接报错:
+权重路径都在各配置的 `paths:` 下——按你的下载位置改。完整目录规划见
+[`docs/vigeo/README.md`](docs/vigeo/README.md)。
+
+**3. 推理** —— 三条路,同一种启动形式:
 
 ```bash
-git clone https://github.com/ByteDance-Seed/Depth-Anything-3 checkpoints/Depth-Anything-3
-pip install -e checkpoints/Depth-Anything-3      # 请在安装完 torch 相关依赖后再执行(见 requirements.txt)
+# a) case demo(da3 空间记忆):首帧图 + camera.pt + prompt -> 约 1 分钟视频
+CONFIG_PATH=configs/infer.yaml bash scripts/finetune/train.sh
+#    等价的命令行捷径(可带 seed / rounds / ttc / skill 等单次参数):
+bash inference/run.sh                     # 内置 playground/case1
+python -m inference.run --input playground/case1/case1 --seed 1234 --rounds 45
+
+# b) 自回归 teacher,30 步(vigeo 空间记忆)
+VALIDATE_ONLY=1 CONFIG_PATH=configs/infer_i2v_camera_ar.yaml bash scripts/finetune/train.sh
+
+# c) 少步 student,4 步(vigeo 空间记忆)
+VALIDATE_ONLY=1 CONFIG_PATH=configs/infer_i2v_camera.yaml bash scripts/finetune/train.sh
 ```
 
-其权重(`depth-anything/DA3NESTED-GIANT-LARGE-1.1`)会从 `checkpoints/hf_cache/` 加载 —— 你可以让它在首次运行时自动下载到该目录,或提前拉取:
+说明:b/c 走训练器的验证循环,必须带 `VALIDATE_ONLY=1`;a) 由配置里的
+`da3_infer.enabled` 直接分派进推理管线,该变量对它无效。vigeo 空间路径与 FA3
+不兼容——如果你编译了 FA3,启动时加 `ALAYA_USE_FA3=0`。
 
-```bash
-HF_HOME=checkpoints/hf_cache hf download depth-anything/DA3NESTED-GIANT-LARGE-1.1
-```
+a) 的完整参数列表见 [`inference/README_zh.md`](inference/README_zh.md)。
 
-**4. 运行一个现成用例**(用例位于 [`playground/`](playground) 下)。
-一键启动脚本会渲染内置的 **case1**(约 1 分钟):
-
-```bash
-# 单卡
-bash inference/run.sh
-
-# 多卡(Ulysses 上下文并行;例如 2 卡或 4 卡)
-GPUS=4 bash inference/run.sh
-```
-
-`run.sh` 只是转发到 `python -m inference.run`(默认 `--input playground/case1/case1`);直接调用该模块即可运行任意用例或传入额外参数:
-
-```bash
-PYTORCH_ALLOC_CONF=expandable_segments:True \
-  python -m inference.run --input playground/case1/case1 --seed 1234
-```
-
-生成的 mp4 会写入 `outputs/` 下。完整参数列表见 [`inference/README.md`](inference/README.md)。
-
-**5. 使用你自己的输入** —— 一个"用例"由共享前缀的三个文件组成:
+b/c 想用自己的图+轨迹:`scripts/infer/generate_video.sh` 一步完成输入准备
+(`--image/--prompt` 配 `--extrinsics` 或 `--synth-frames`)并启动 c)。
+a) 的用例是共享前缀的三个文件:
 
 ```
-<prefix>_image.png     首帧(用于初始化历史)
+<prefix>_image.png     首帧(初始化历史)
 <prefix>_camera.pt     相机轨迹:cam_c2w [F,4,4] + 内参
 <prefix>_prompt.txt    文本提示
+<prefix>_skill.txt     (可选)最后几秒的提示词(一次性收尾特效)
 ```
 
-把 `--input` 指向该前缀即可。对于长时程(约 1 分钟)的 rollout,可加上 `--ttc` 来抑制外观漂移。完整参数列表见 [`inference/README.md`](inference/README.md)。
+**4. 训练** —— 四个阶段,同一启动器;每阶段的 `paths:` 指向上一阶段的 checkpoint:
+
+```bash
+CONFIG_PATH=configs/stage0_precache.yaml      bash scripts/finetune/train.sh  # VAE latent + 文本嵌入缓存
+CONFIG_PATH=configs/stage1_pretrain_bidir.yaml bash scripts/finetune/train.sh # 双向预训练
+CONFIG_PATH=configs/stage2a_histpretrain.yaml bash scripts/finetune/train.sh  # 历史编码器预训练
+CONFIG_PATH=configs/stage2b_arsft_vigeo.yaml  bash scripts/finetune/train.sh  # 自回归 SFT(ViGeo)
+CONFIG_PATH=configs/stage3_dmd_vigeo.yaml     bash scripts/finetune/train.sh  # 少步 DMD 蒸馏
+```
+
+数据下载、数据格式、各阶段细节与启动器参数:[`docs/vigeo/README.md`](docs/vigeo/README.md)。
 
 ## 👥 团队
 
@@ -164,11 +177,17 @@ PYTORCH_ALLOC_CONF=expandable_segments:True \
   journal={arXiv preprint arXiv:2607.18367},
   year={2026}
 }
+@article{team2026alayaworldv11,
+  title={AlayaWorld v1.1: Long-Horizon and Playable Video World Generation},
+  author={Team, AlayaWorld and Zhang, Kaipeng and Li, Chuanhao and Zhan, Yifan and Ge, Yongtao and Yin, Yuanyang and Tan, Jiaming and He, Kang and Fan, Liaoyuan and Liu, Ruicong and Zhai, Mingliang and others},
+  journal={arXiv preprint arXiv:2608.13492},
+  year={2026}
+}
 ```
 
 ## 📄 许可证
 
-本项目基于 Lightricks Ltd. 的 LTX-2 构建。原始 LTX-2 代码库的部分内容(`flash_alaya/ltx2/`)已由 Alaya Lab 修改,仅供学术与研究用途;所发布的权重(`merged_infer.safetensors`)是从 LTX-2.3 微调而来。因此,本项目 —— 代码与权重 —— 依据 [**LTX-2 社区许可协议(LTX-2 Community License Agreement)**](LICENSE) 发布。LTX-2 的所有原始版权、许可、专利、商标及署名声明均予以保留。
+本项目基于 Lightricks Ltd. 的 LTX-2 构建。原始 LTX-2 代码库的部分内容(`ltx2/`)已由 Alaya Lab 修改,仅供学术与研究用途;所发布的权重(`merged_infer.safetensors`)是从 LTX-2.3 微调而来。因此,本项目 —— 代码与权重 —— 依据 [**LTX-2 社区许可协议(LTX-2 Community License Agreement)**](LICENSE) 发布。LTX-2 的所有原始版权、许可、专利、商标及署名声明均予以保留。
 
 **仅供学术研究与非商业用途。** 如需将 LTX-2 或其衍生物用于商业用途,请联系 Lightricks Ltd.(年营收 ≥ 1000 万美元的主体需获取商业许可)。
 
