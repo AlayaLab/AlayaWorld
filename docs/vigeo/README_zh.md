@@ -75,7 +75,7 @@ hf download AlayaLab/AlayaWorld-v1.1-stage3 --local-dir weights/alaya-world-dmd
 ```bash
 git clone https://github.com/aigc3d/ViGeo third_party/ViGeo
 pip install -r third_party/ViGeo/requirements.txt   # 会装上 xformers,见下面的注意
-# checkpoint 放到 third_party/ViGeo/checkpoints/ViGeo1.1
+hf download pkqbajng/ViGeo1.1 --local-dir third_party/ViGeo/checkpoints/ViGeo1.1   # checkpoint 来自 https://huggingface.co/pkqbajng/ViGeo1.1
 ```
 
 对应配置键：`spatial_memory.vigeo_repo_path`、`spatial_memory.vigeo_checkpoint`，
