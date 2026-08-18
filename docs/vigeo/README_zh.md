@@ -47,13 +47,13 @@ export HF_HUB_ENABLE_HF_TRANSFER=1        # 26GB 的 transformer 用它快很多
 #    从 LTX-2.3 的发布渠道获取,按下面的表放好
 
 # 2) 自回归 teacher(stage2b):全量微调过的 transformer,25GB
-huggingface-cli download <hf-org>/alaya-world-ar --local-dir weights/alaya-world-ar
+hf download AlayaLab/AlayaWorld-v1.1-stage2b --local-dir weights/alaya-world-ar
 
 # 3) 少步学生(stage3):挂在 teacher 上的 LoRA,2.6GB
-huggingface-cli download <hf-org>/alaya-world-dmd --local-dir weights/alaya-world-dmd
+hf download AlayaLab/AlayaWorld-v1.1-stage3 --local-dir weights/alaya-world-dmd
 ```
 
-把 `<hf-org>` 换成实际发布的组织名。各仓里有什么、被哪个配置字段吃掉：
+各仓里有什么、被哪个配置字段吃掉：
 
 | 文件 | 体积 | 配置字段 |
 |---|---|---|
@@ -62,7 +62,7 @@ huggingface-cli download <hf-org>/alaya-world-dmd --local-dir weights/alaya-worl
 | `weights/alaya-world-ar/transformer.pt` | 26.2GB | `paths.resume_checkpoint`（填目录） |
 | `weights/alaya-world-ar/history_encoder.pt` | 34MB | `paths.history_encoder` |
 | `weights/alaya-world-dmd/lora.safetensors` | 2.6GB | `paths.dmd_resume`（填目录） |
-| `weights/alaya-world-dmd/{critic_lora.safetensors,gan_discriminator.pt}` | 2.6GB + 407MB | 只有**续训** stage3 才需要，推理不用 |
+| *(critic / GAN 判别器状态)* | — | 发布的 checkpoint 不包含;只有自己跑 stage3 训练才会产生 |
 
 两个推理配置用的都是 teacher 权重；把它从 30 步 teacher 切成 4 步学生的开关就是
 `paths.dmd_resume`（见 [推理](#8-推理单图--相机--prompt--视频)）。
@@ -92,43 +92,46 @@ Depth-Anything-3（`spatial_memory.depth_backend: da3`）是另一个深度后�
 
 ### 1.4 数据集
 
-`sekai_real_hq` 以 **gated（需接受协议）** 的 Hugging Face 数据集形式发布：先在数据集页面接受协议，
-再用有权限的 token 下载，否则会返回 401。
+数据集分两部分,来自两个地方:
+
+- **标注**(清单 + caption + 相机位姿,打包约 1.5GB)—— 由我们以 **gated(需接受协议)** 的
+  Hugging Face 数据集发布:[AlayaLab/AlayaWorld-v1.1-data](https://huggingface.co/datasets/AlayaLab/AlayaWorld-v1.1-data)。
+  先在页面接受协议,再用有权限的 token 下载。
+- **视频** —— **我们不分发。** 请用上游工具
+  [Lixsp11/sekai-codebase](https://github.com/Lixsp11/sekai-codebase)
+  下载 Sekai-Real-Walking 源片段(按其 README 拉取 walking 子集),放到
+  `data/Video/sekai_real_walking/` 下。全部 18208 条约需 **0.6TB** 磁盘。
 
 ```bash
-huggingface-cli login                      # 或 export HF_TOKEN=<你的 token>
-export HF_HUB_ENABLE_HF_TRANSFER=1
+hf auth login                              # 或 export HF_TOKEN=<你的 token>
 
-# 全量:annotation(3.5GB)+ 全部 18208 条视频(约 0.6TB)。支持断点续传,中断后重跑即可。
-huggingface-cli download <hf-org>/sekai-real-walking-hq --repo-type dataset \
-    --local-dir data --max-workers 8
+# 标注:三个文件(清单 jsonl + 两个 tar 包)
+hf download AlayaLab/AlayaWorld-v1.1-data --repo-type dataset \
+    --local-dir data/Annotation/sekai_real_hq
 
-# 只要 annotation(3.5GB),先看清格式的话
-huggingface-cli download <hf-org>/sekai-real-walking-hq --repo-type dataset \
-    --include "annotation/*" --local-dir data
+# 解压 caption/pose,得到配置期望的布局
+cd data/Annotation/sekai_real_hq && tar -xzf caption.tar.gz && tar -xzf pose.tar.gz && cd -
 
-# 按 pattern 只下一部分视频
-huggingface-cli download <hf-org>/sekai-real-walking-hq --repo-type dataset \
-    --include "annotation/*" --include "video/sekai_real_walking/--*" --local-dir data
+# 视频:走 sekai-codebase(见其 README),下到 data/Video/sekai_real_walking/
 ```
 
-全量数据集按 **0.65TB** 预留磁盘。`--local-dir` 是直接落盘（不会在 hub cache 里再存一份）；
-想把元数据放别处就设 `HF_HOME`。只下一部分也能训 —— 文件缺失的片段会被 loader 跳过。
+视频只下载一部分也能训 —— 文件缺失的片段会被 loader 跳过。
 
-解开之后，配置期望的布局是：
+解开之后,配置期望的布局是:
 
 ```
 data/Annotation/sekai_real_hq/sekai_real_hq.jsonl      18208 行,每行一条片段
-data/Annotation/sekai_real_hq/caption/*.json           整片 caption + 分段 caption
+data/Annotation/sekai_real_hq/caption/                 整片 caption + 分段 caption
 data/Annotation/sekai_real_hq/pose/*.npz               camera-to-world 外参(估计得到)
-data/Video/sekai_real_walking/<video-id>/*.mp4         片段,来自 3879 个源视频
+data/Video/sekai_real_walking/<video-id>/*.mp4         片段,来自 3879 个源视频(经 sekai-codebase 下载)
 ```
 
-把 `paths.annotation_base_dir` 指到 `data/Annotation`，`paths.video_base_dir` 指到 `data/Video`。
+把 `paths.annotation_base_dir` 指到 `data/Annotation`,`paths.video_base_dir` 指到 `data/Video`。
 jsonl 字段与 caption/pose 的 schema 见 [数据格式](#4-数据格式)。
 
-数据集的使用受你在页面上接受的协议约束。**使用该数据即默认你已遵守 [sekai-codebase](https://github.com/Lixsp11/sekai-codebase) 的数据使用协议**——素材由此派生。
-相机位姿是我们自己估计的结果，不是源站标注。
+标注的使用受你在数据集页面接受的协议约束。**使用该数据即默认你已遵守
+[sekai-codebase](https://github.com/Lixsp11/sekai-codebase) 的数据使用协议**——素材由此派生。
+相机位姿是我们自己估计的结果,不是源站标注。
 
 ### 1.5 启动前自检
 

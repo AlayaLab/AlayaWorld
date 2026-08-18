@@ -48,15 +48,14 @@ export HF_HUB_ENABLE_HF_TRANSFER=1        # much faster for the 26GB transformer
 # 1) LTX-2.3 base: transformer + VAE in one safetensors, plus the text encoder
 #    obtain it from the LTX-2.3 release and place it as below
 
-# 2) autoregressive teacher (stage2b): full fine-tuned transformer, 25GB
-huggingface-cli download <hf-org>/alaya-world-ar --local-dir weights/alaya-world-ar
+# 2) autoregressive teacher (stage2b): full fine-tuned transformer, 26GB
+hf download AlayaLab/AlayaWorld-v1.1-stage2b --local-dir weights/alaya-world-ar
 
 # 3) few-step student (stage3): LoRA on top of the teacher, 2.6GB
-huggingface-cli download <hf-org>/alaya-world-dmd --local-dir weights/alaya-world-dmd
+hf download AlayaLab/AlayaWorld-v1.1-stage3 --local-dir weights/alaya-world-dmd
 ```
 
-Replace `<hf-org>` with the published organization. What each repository contains and which config
-field consumes it:
+What each repository contains and which config field consumes it:
 
 | file | size | config field |
 |---|---|---|
@@ -65,7 +64,7 @@ field consumes it:
 | `weights/alaya-world-ar/transformer.pt` | 26.2GB | `paths.resume_checkpoint` (point it at the directory) |
 | `weights/alaya-world-ar/history_encoder.pt` | 34MB | `paths.history_encoder` |
 | `weights/alaya-world-dmd/lora.safetensors` | 2.6GB | `paths.dmd_resume` (point it at the directory) |
-| `weights/alaya-world-dmd/{critic_lora.safetensors,gan_discriminator.pt}` | 2.6GB + 407MB | only needed to *continue* stage3 training, not for inference |
+| *(critic / GAN discriminator states)* | — | not part of the released checkpoint; only produced when you run stage3 training yourself |
 
 Inference uses the teacher for both configs; `paths.dmd_resume` is what switches it from the 30-step
 teacher to the 4-step student (see [Inference](#8-inference-single-image--camera--prompt--video)).
@@ -97,43 +96,46 @@ xformers through dinov2, so the same FA3 restriction applies.
 
 ### 1.4 Dataset
 
-`sekai_real_hq` is published as a **gated** Hugging Face dataset: open the dataset page, accept the
-terms, and use a token that has access — otherwise the download returns 401.
+The dataset has two parts obtained from two places:
+
+- **Annotations** (manifest + captions + camera poses, ~1.5GB packed) — released by us as the
+  **gated** Hugging Face dataset [AlayaLab/AlayaWorld-v1.1-data](https://huggingface.co/datasets/AlayaLab/AlayaWorld-v1.1-data):
+  open the page, accept the terms, then download with a token that has access.
+- **Videos** — **not distributed by us.** Download the Sekai-Real-Walking source clips with the
+  upstream tooling: [Lixsp11/sekai-codebase](https://github.com/Lixsp11/sekai-codebase)
+  (follow its README to fetch the walking subset), and place them under
+  `data/Video/sekai_real_walking/`. Budget ~0.6TB for all 18,208 clips.
 
 ```bash
-huggingface-cli login                      # or export HF_TOKEN=<your token>
-export HF_HUB_ENABLE_HF_TRANSFER=1
+hf auth login                              # or export HF_TOKEN=<your token>
 
-# everything: annotations (3.5GB) + all 18208 clips (~0.6TB). Resumable - rerun after an interruption.
-huggingface-cli download <hf-org>/sekai-real-walking-hq --repo-type dataset \
-    --local-dir data --max-workers 8
+# annotations: three files (manifest jsonl + two tarballs)
+hf download AlayaLab/AlayaWorld-v1.1-data --repo-type dataset \
+    --local-dir data/Annotation/sekai_real_hq
 
-# annotations only (3.5GB), if you just want to inspect the format first
-huggingface-cli download <hf-org>/sekai-real-walking-hq --repo-type dataset \
-    --include "annotation/*" --local-dir data
+# unpack captions/poses into the layout the configs expect
+cd data/Annotation/sekai_real_hq && tar -xzf caption.tar.gz && tar -xzf pose.tar.gz && cd -
 
-# a subset of the clips, by pattern
-huggingface-cli download <hf-org>/sekai-real-walking-hq --repo-type dataset \
-    --include "annotation/*" --include "video/sekai_real_walking/--*" --local-dir data
+# videos: via sekai-codebase (see its README), into data/Video/sekai_real_walking/
 ```
 
-Budget about **0.65TB** of disk for the full dataset. `--local-dir` writes the files directly (no
-second copy in the hub cache); set `HF_HOME` if you want the metadata elsewhere. A partial download
-is fine to train on — the loader skips clips whose file is missing.
+A partial video download is fine to train on — the loader skips clips whose file is missing.
 
 After unpacking, the layout the configs expect is:
 
 ```
 data/Annotation/sekai_real_hq/sekai_real_hq.jsonl      18208 lines, one clip each
-data/Annotation/sekai_real_hq/caption/*.json           overall + segment captions
+data/Annotation/sekai_real_hq/caption/                 overall + segment captions
 data/Annotation/sekai_real_hq/pose/*.npz               camera-to-world extrinsics (estimated)
-data/Video/sekai_real_walking/<video-id>/*.mp4         clips, 3879 source videos
+data/Video/sekai_real_walking/<video-id>/*.mp4         clips, 3879 source videos (from sekai-codebase)
 ```
 
 Point `paths.annotation_base_dir` at `data/Annotation` and `paths.video_base_dir` at `data/Video`.
 The clip fields and the caption/pose schema are described in [Data format](#4-data-format).
 
-Use of the dataset is bound to the terms you accept on its page. **By using this data you are deemed to have agreed to the data usage agreement of [sekai-codebase](https://github.com/Lixsp11/sekai-codebase)**, from which the footage is derived.
+Use of the annotations is bound to the terms you accept on the dataset page. **By using this data
+you are deemed to have agreed to the data usage agreement of
+[sekai-codebase](https://github.com/Lixsp11/sekai-codebase)**, from which the footage is derived.
 The camera poses are our own estimates, not source annotations.
 
 ### 1.5 Check before you launch
