@@ -30,7 +30,7 @@ CONFIG_PATH=configs/stage1_pretrain_bidir.yaml bash scripts/finetune/train.sh
 
 ```bash
 python3.10 -m venv .venv && source .venv/bin/activate
-pip install torch==2.7.1 --index-url https://download.pytorch.org/whl/cu126   # 按你的 CUDA 选
+pip install torch==2.7.1 --index-url https://download.pytorch.org/whl/cu128   # 按你的 CUDA 选
 pip install -r requirements.txt
 pip install flash-attn --no-build-isolation                                   # FA2,attention 路径需要
 ```

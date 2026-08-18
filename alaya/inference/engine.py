@@ -8,7 +8,7 @@ alaya.trainer. Expects an inference config such as configs/infer.yaml
 
 Library deps only: alaya.model.loader / alaya.memory / alaya.config,
 ltx2.modules. The streaming VAE encoder is vendored at
-flash_alaya/ltx2/utils/ltx2_streaming_vae.py (an LTX2 adaptation; the alaya training
+ltx2/utils/ltx2_streaming_vae.py (an LTX2 adaptation; the alaya training
 path still uses independently).
 """
 from __future__ import annotations

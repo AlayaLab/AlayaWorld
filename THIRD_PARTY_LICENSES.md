@@ -10,17 +10,17 @@ their original licenses.
 
 ## 1. LTX-Video / LTX-2 (Diffusion backbone, VAE, text-encoder)
 
-**Directory:** `flash_alaya/ltx2/`
+**Directory:** `ltx2/`
 **Source:** Lightricks
 **Repository:** https://github.com/Lightricks/LTX-2 · https://huggingface.co/Lightricks/LTX-2.3
 **License (code and model):** **LTX-2 Community License Agreement** (dated 2026-01-05) — https://github.com/Lightricks/LTX-2/blob/main/LICENSE . This is **not** Apache 2.0. Free for academic use and for commercial use by entities under $10M ARR; entities with ≥ $10M ARR need a paid commercial license (ltxv-licensing@lightricks.com). **Any Derivative of LTX-2 must be distributed exclusively under this same Agreement**, retaining copyright notices, shipping the full license + use restrictions, and marking modified files. Includes use-based restrictions (Attachment A).
-**Usage:** Our DiT and streaming pipeline in `flash_alaya/ltx2/` are refactored/adapted from LTX-2 (derivative code). Our released weights `merged_infer.safetensors` are **fine-tuned from the LTX-2.3-22B base**, and the VAE / text-encoder tensors in that bundle are taken from the original LTX-2.3 weights — i.e. both the `ltx2/` code and the released weights are **derivatives of LTX-2.3** and are governed by the LTX-2 Community License Agreement, **not** this repo's Apache 2.0.
+**Usage:** Our DiT and streaming pipeline in `ltx2/` are refactored/adapted from LTX-2 (derivative code). Our released weights `merged_infer.safetensors` are **fine-tuned from the LTX-2.3-22B base**, and the VAE / text-encoder tensors in that bundle are taken from the original LTX-2.3 weights — i.e. both the `ltx2/` code and the released weights are **derivatives of LTX-2.3** and are governed by the LTX-2 Community License Agreement, **not** this repo's Apache 2.0.
 
 ---
 
 ## 2. Wan / Wan2.1 (VAE and architecture style)
 
-**Directory:** `flash_alaya/ltx2/` (VAE and "WAN-style" module structure; see `ltx2/utils/ltx2_streaming_vae.py`, `ltx2/configs/`)
+**Directory:** `ltx2/` (VAE and "WAN-style" module structure; see `ltx2/utils/ltx2_streaming_vae.py`, `ltx2/configs/`)
 **Source:** Wan-Video (Alibaba)
 **Repository:** https://github.com/Wan-Video/Wan2.1
 **License:** Apache 2.0
@@ -30,7 +30,7 @@ their original licenses.
 
 ## 3. TAEHV — Tiny AutoEncoder (optional bank decoder)
 
-**File:** `flash_alaya/utils/taehv.py` (vendored)
+**File:** `alaya/inference/taehv.py` (vendored)
 **Source:** madebyollin
 **Repository:** https://github.com/madebyollin/taehv
 **License:** MIT
@@ -93,7 +93,7 @@ The third-party components below are compatible with being used/included under i
 | einops / bitsandbytes | MIT | ✓ |
 
 Model weights are subject to their providers' separate license terms. Both the
-`flash_alaya/ltx2/` code and the released `merged_infer.safetensors` weights are
+`ltx2/` code and the released `merged_infer.safetensors` weights are
 derivatives of LTX-2.3 and are governed by the **LTX-2 Community License
 Agreement**. Gemma-3 and Depth-Anything-3 weights are not redistributed here.
 
