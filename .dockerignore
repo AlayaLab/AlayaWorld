@@ -1,0 +1,31 @@
+# Python and local development state
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.venv/
+venv/
+
+# Weights and the pinned code dependencies are prepared in the directory the CLI
+# mounts at run time, rather than copied into the image.
+checkpoints/
+third_party/
+outputs/
+
+# The demo frontend reaches the model over the network, so it stays out of the
+# inference image.
+reactor/demo/
+
+# Training-only material the serving path never reads.
+docs/
+
+# Editor, source-control, and Docker metadata
+.vscode/
+.idea/
+*.swp
+.DS_Store
+.git/
+.gitignore
+Dockerfile.reactor
+.dockerignore
