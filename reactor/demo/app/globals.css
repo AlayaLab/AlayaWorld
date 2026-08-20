@@ -1,0 +1,51 @@
+@import "tailwindcss";
+
+@theme {
+  --color-canvas: #0b0c0e;
+  --color-panel: #14161a;
+  --color-panel-raised: #1c1f25;
+  --color-edge: #272b33;
+  --color-ink: #f2f4f7;
+  --color-ink-dim: #9aa3af;
+  --color-ink-faint: #666e7a;
+  --color-live: #4ade80;
+  --color-pending: #fbbf24;
+  --color-alert: #f87171;
+  --color-accent: #7dd3fc;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  background: var(--color-canvas);
+  color: var(--color-ink);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Range inputs are the one control the demo styles by hand, so the seed and
+   axis readouts look the same in every browser. */
+input[type="range"] {
+  appearance: none;
+  height: 2px;
+  background: var(--color-edge);
+  border-radius: 999px;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  background: var(--color-ink);
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--color-ink);
+}

@@ -1,0 +1,43 @@
+# Dependencies for the served image, installed in one pass.
+#
+# This is deliberately separate from the repository's own requirements.txt, which
+# states lower bounds for training and the offline inference paths. A served
+# image wants the opposite: exact versions, so the container that streams to a
+# client today is the one that streams tomorrow. It also wants headless OpenCV,
+# since nothing in the image opens a window.
+#
+# The extra index supplies the CUDA 12.8 PyTorch wheels Blackwell needs.
+--extra-index-url https://download.pytorch.org/whl/cu128
+
+reactor-runtime==3.1.2
+
+torch==2.9.1
+torchvision==0.24.1
+torchaudio==2.9.1
+
+# Reactor Runtime needs NumPy 2.x. The da3 inference path and the pinned
+# Depth-Anything-3 checkout are verified against it here, which is why the
+# repository's own requirements no longer cap NumPy below 2.
+numpy>=2.1,<3
+scipy>=1.14
+safetensors>=0.4
+einops>=0.7
+diffusers==0.39.0
+transformers==5.13.1
+peft>=0.17
+bitsandbytes>=0.45
+opencv-python-headless>=4.10
+pillow>=10.1
+pyyaml>=6.0.3
+tqdm
+easydict
+huggingface-hub
+
+# The Depth-Anything-3 imports the da3 path actually reaches. Its export-only
+# extras are left out, so the serving image stays smaller than a full DA3 install.
+addict
+imageio
+matplotlib
+moviepy==1.0.3
+omegaconf
+plyfile

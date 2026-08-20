@@ -1,0 +1,79 @@
+# Settings for serving the da3 inference path interactively.
+#
+# `inference.config` and the `inputs` paths are relative to the repository root.
+# Everything under `assets` is relative to the directory the CLI mounts, which
+# `reactor.yaml` sets to `./checkpoints` — the same place the rest of the
+# repository tells you to put weights, so an existing offline-inference setup is
+# already in the right shape.
+
+inference:
+  config: configs/infer.yaml
+  seed: 1234
+  compile: default
+  # Turns generated at load so the compiled kernels are built before the model
+  # reports itself available, rather than on the first client's first chunk.
+  warmup_chunks: 1
+  # flash_attention_4 needs a Hopper or Blackwell GPU; pytorch serves anything
+  # older, and native leaves AlayaWorld's own selection in place.
+  attention_backend: flash_attention_4
+  flex_attention: true
+  ttc: false
+  # Decode spatial-memory pixels with the tiny decoder instead of the full VAE.
+  # Lossy for the depth and warp sources the memory is built from, and the
+  # frames the client sees are unaffected.
+  bank_taehv: true
+
+assets:
+  model:
+    path: merged_infer.safetensors
+    repo_id: AlayaLab/AlayaWorld
+    revision: f9699009a00f93214d8d2942d6546f3fa5398bea
+  gemma:
+    path: gemma-3-12b-it-qat-q4_0-unquantized
+    repo_id: google/gemma-3-12b-it-qat-q4_0-unquantized
+    revision: 68f7ee4fbd59087436ada77ed2d62f373fdd4482
+  da3_source:
+    path: Depth-Anything-3
+    url: https://github.com/ByteDance-Seed/Depth-Anything-3.git
+    revision: 3d835ec1a5802d64a8b8b15f817a1ab54809bfe4
+  da3_model:
+    path: hf_cache/hub/models--depth-anything--DA3NESTED-GIANT-LARGE-1.1
+    repo_id: depth-anything/DA3NESTED-GIANT-LARGE-1.1
+    revision: b2359bdf726fb44ef62acca04d629dcf158053e7
+  da3_cache: hf_cache
+  # The tiny decoder that stands in for the full VAE on spatial-memory pixels.
+  # `taeltx2_3_wide` is the larger, less blurry LTX-2.3 variant, and its
+  # filename is what selects that architecture, so keep the name.
+  taehv_source:
+    path: taehv
+    url: https://github.com/madebyollin/taehv.git
+    revision: 32ac0146b11007cda5a57b60a3b35653361fb8a4
+  taehv: taehv/taeltx2_3_wide.pth
+
+inputs:
+  # Uploaded images borrow this case's camera calibration and motion horizon.
+  upload_template: playground/case1/case1
+  # The bundled cases offered by the `random_image` command.
+  random_images:
+    - playground/case1/case1
+    - playground/case2/case2
+
+decode:
+  overlap_latents: 6
+
+memory:
+  max_spatial_frames: 320
+  recent_spatial_frames: 160
+
+stream:
+  # Rebuild the rollout before dense camera metadata can grow without bound.
+  max_chunks_per_rollout: 512
+
+motion:
+  # Scale each axis to a comparable normalized AdaLN action magnitude.
+  strafe_units_per_second: 0.126
+  vertical_units_per_second: 0.261
+  forward_units_per_second: 1.905
+  pitch_degrees_per_second: 4.039
+  yaw_degrees_per_second: 9.375
+  roll_degrees_per_second: 4.094

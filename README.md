@@ -66,6 +66,7 @@ fastvideo/      dataset + rollout utilities shared by training
 scripts/        finetune/train.sh (unified launcher) · infer/ helpers · tools/
 configs/        stage0–stage3 training + three inference configs
 inference/      da3 case-demo CLI entry (run.sh / run.py)
+reactor/        serve the da3 path as a live, playable stream (+ browser demo)
 playground/     bundled demo case (case1)
 docs/vigeo/     full training handbook (data format, stages, knobs)
 ```
@@ -120,6 +121,15 @@ VALIDATE_ONLY=1 CONFIG_PATH=configs/infer_i2v_camera_ar.yaml bash scripts/finetu
 
 # c) few-step student, 4-step (vigeo spatial memory)
 VALIDATE_ONLY=1 CONFIG_PATH=configs/infer_i2v_camera.yaml bash scripts/finetune/train.sh
+```
+
+All three render a fixed trajectory to a file. To drive the camera and swap prompts
+while generation runs, [`reactor/`](reactor/README.md) serves path a) as a live
+stream with a browser demo:
+
+```bash
+reactor build -f Dockerfile.reactor
+reactor run --gpus device=0 -e HF_TOKEN     # then reactor/demo for the UI
 ```
 
 Notes: b/c run through the trainer's validation loop, so they need

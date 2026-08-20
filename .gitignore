@@ -81,6 +81,15 @@ mlruns/
 *.mp4
 .mypy_cache/
 node_modules/
+# Next.js build output from reactor/demo. Ignored at the root rather than only in
+# that folder, because Next writes to an absolute path and a dev server left
+# running across a move recreates it where the folder used to be.
+.next/
+*.tsbuildinfo
+# The `demo/` rule above matches any directory of that name, which would drop the
+# browser demo's source. Re-include that one directory; its own .gitignore still
+# keeps its dependencies and build output out.
+!reactor/demo/
 .nox/
 *.npy
 *.npz

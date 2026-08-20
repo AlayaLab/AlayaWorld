@@ -1,0 +1,8 @@
+# This app installs on its own, so it can be copied out of the example and run
+# anywhere without inheriting a parent workspace.
+packages: []
+
+# `sharp` builds native image-optimisation binaries for Next.js. This app has no
+# images to optimise, so the build is declined rather than approved.
+allowBuilds:
+  sharp: false

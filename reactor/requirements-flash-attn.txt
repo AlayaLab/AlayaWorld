@@ -1,0 +1,13 @@
+# FlashAttention 4 serves the model's unmasked attention, selected by
+# `inference.attention_backend` in alayaworld.yaml.
+#
+# It is installed on its own because the CuTe DSL it builds on caps protobuf
+# below 7 while Reactor Runtime needs 7.35 for its wire bindings, which no single
+# resolution can satisfy. Both work on 7.35, so the Dockerfile puts that version
+# back after this file is installed.
+#
+# Every release is a pre-release, so the version has to be pinned exactly for pip
+# to accept it at all. The kernels are JIT-compiled through CuTe DSL for the GPU
+# found at run time and need a Hopper or Blackwell card; set the backend to
+# `pytorch` on anything older.
+flash-attn-4==4.0.0b26
