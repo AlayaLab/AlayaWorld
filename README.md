@@ -27,6 +27,7 @@
 
 ## 📰 News
 
+- **[2026-08-20]** **Interactive browser demo**: play AlayaWorld live — drive the camera from the keyboard and change the prompt mid-rollout, streamed as it generates. See [`reactor/`](reactor/README.md). Huge thanks to community contributors [@Dere-Wah](https://github.com/Dere-Wah) and [@Rising0321](https://github.com/Rising0321)!
 - **[2026-08-17]** Full-stack **training + inference code**, **v1.1 weights** (AR + DMD) and **partial training data** open-sourced, with the [v1.1 technical report](https://arxiv.org/abs/2608.13492). See the [Release Roadmap](#-release-roadmap).
 - **[2026-07-21]** [Full Technical Report](https://arxiv.org/abs/2607.18367) released.
 - **[2026-07-16]** Inference code released and pretrained weights available on 🤗 [Hugging Face](https://huggingface.co/AlayaLab/AlayaWorld). See [Quick Start](#-quick-start).

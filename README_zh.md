@@ -27,6 +27,7 @@
 
 ## 📰 最新动态
 
+- **[2026-08-20]** 支持**交互式浏览器 demo**:实时游玩 AlayaWorld——键盘开车、边生成边改 prompt、边生成边播放。见 [`reactor/`](reactor/README.md)。特别感谢社区贡献者 [@Dere-Wah](https://github.com/Dere-Wah) 与 [@Rising0321](https://github.com/Rising0321)!
 - **[2026-08-17]** 开源**全栈训练+推理代码**、**v1.1 权重**(AR + DMD)与**部分训练数据**,同步发布 [v1.1 技术报告](https://arxiv.org/abs/2608.13492)。见[发布路线图](#-发布路线图)。
 - **[2026-07-21]** 发布[完整技术报告](https://arxiv.org/abs/2607.18367)。
 - **[2026-07-16]** 发布推理代码,预训练权重已上线 🤗 [Hugging Face](https://huggingface.co/AlayaLab/AlayaWorld)。参见[快速开始](#-快速开始)。
