@@ -14,7 +14,7 @@ inference:
   # reports itself available, rather than on the first client's first chunk.
   warmup_chunks: 1
   # flash_attention_4 needs a Hopper or Blackwell GPU; pytorch serves anything
-  # older, and native leaves AlayaWorld's own selection in place.
+  # older, and upstream leaves AlayaWorld's own selection in place.
   attention_backend: flash_attention_4
   flex_attention: true
   ttc: false

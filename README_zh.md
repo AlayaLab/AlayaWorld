@@ -66,6 +66,7 @@ fastvideo/      训练共用的数据集与 rollout 工具
 scripts/        finetune/train.sh(统一启动器)· infer/ 辅助 · tools/
 configs/        stage0–stage3 训练 + 三条推理配置
 inference/      da3 case-demo 命令行入口(run.sh / run.py)
+reactor/        把 da3 路径变成可实时游玩的直播流(含浏览器 demo)
 playground/     内置演示用例(case1)
 docs/vigeo/     完整训练手册(数据格式、各阶段、启动器参数)
 ```
@@ -117,6 +118,14 @@ VALIDATE_ONLY=1 CONFIG_PATH=configs/infer_i2v_camera_ar.yaml bash scripts/finetu
 
 # c) 少步 student,4 步(vigeo 空间记忆)
 VALIDATE_ONLY=1 CONFIG_PATH=configs/infer_i2v_camera.yaml bash scripts/finetune/train.sh
+```
+
+以上三条都是按固定轨迹渲染成文件。想边生成边开车、随时改 prompt,
+[`reactor/`](reactor/README.md) 把 a) 这条路径做成了实时流并配了浏览器 demo:
+
+```bash
+reactor build -f Dockerfile.reactor
+reactor run --gpus device=0 -e HF_TOKEN     # 然后进 reactor/demo 起前端
 ```
 
 说明:b/c 走训练器的验证循环,必须带 `VALIDATE_ONLY=1`;a) 由配置里的

@@ -69,6 +69,19 @@ curl -s localhost:8080/schema
 `/health` reports `state: available` once loading and warmup are done. `/schema`
 is the command surface below, as OpenAPI.
 
+Without Docker (e.g. inside a managed GPU container that has no daemon), the
+runtime can also be started directly — install `reactor/requirements.txt` into a
+Python ≥ 3.12 environment and run, from the repository root:
+
+```sh
+REACTOR_WEIGHTS_PATH=$PWD/checkpoints HOST=0.0.0.0 PORT=8080 \
+  python -m reactor_runtime.serve
+```
+
+`REACTOR_WEIGHTS_PATH` matters: it is what the CLI normally mounts, and without
+it the runtime falls back to `~/.cache/reactor_registry` and re-downloads the
+26 GB checkpoint there even when `checkpoints/` is already populated.
+
 ## Play it in the browser
 
 [`demo/`](./demo) is a small Next.js app for exactly this model: pick a starting
@@ -136,7 +149,7 @@ Two things in `reactor/alayaworld.yaml` matter most, both on by default:
 
 - `attention_backend: flash_attention_4` serves unmasked attention with
   FlashAttention 4, which needs a Hopper or Blackwell GPU. `pytorch` serves
-  anything older, and `native` leaves the repository's own selection in place.
+  anything older, and `upstream` leaves the repository's own selection in place.
   Masked blocks always fall through to the PyTorch implementation, the only one
   that builds the banded mask a sliding window needs. The adapter substitutes the
   callable on the loaded attention modules; it does not patch `ltx2/`.

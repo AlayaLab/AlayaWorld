@@ -233,7 +233,7 @@ def resolve_attention_backend(
     Raises:
         RuntimeError: FlashAttention 4 was asked for but cannot be imported.
     """
-    if backend == "native":
+    if backend == "upstream":
         return None
     if backend == "pytorch":
         return pytorch_attention
