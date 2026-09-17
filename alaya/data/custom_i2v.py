@@ -25,13 +25,13 @@ _DEFAULT_INTRINSIC = torch.tensor(
 
 
 class CustomI2VDataset(Dataset):
-    """Pair each image with one camera trajectory (deterministic image_i <-> pose_i; poses are tiled cyclically)."""
+    """Image prompts with optional camera trajectories (tiled cyclically when supplied)."""
 
     def __init__(
         self,
         *,
         image_dir: str,
-        pose_jsonl: str,
+        pose_jsonl: str | None,
         annotation_base_dir: str | None,
         width: int,
         height: int,
@@ -42,6 +42,7 @@ class CustomI2VDataset(Dataset):
         poses_per_image: int = 1,
         pose_stride: int = 40,
         captions_json: str | None = None,
+        prompt_file: str | None = None,
     ) -> None:
         self.width = int(width)
         self.height = int(height)
@@ -51,6 +52,10 @@ class CustomI2VDataset(Dataset):
         self.frames = int(frames)               # number of seed frames the single image is repeated to
         self.traj_frames = int(traj_frames)      # trajectory length after cyclic tiling
         self.caption = str(caption or _GENERIC_CAPTION)
+        if prompt_file:
+            self.caption = Path(prompt_file).read_text(encoding="utf-8").strip()
+            if not self.caption:
+                raise ValueError(f"empty prompt_file: {prompt_file}")
         # Per-image captions keyed by file name with or without extension; falls back to a generic prompt.。
         self.captions: dict[str, str] = {}
         if captions_json:
@@ -65,13 +70,16 @@ class CustomI2VDataset(Dataset):
             raise FileNotFoundError(f"no images ({_IMG_EXTS}) under {image_dir}")
 
         self.pose_entries: list[dict[str, Any]] = []
-        with open(pose_jsonl, "r", encoding="utf-8") as f:
-            for line in f:
-                line = line.strip()
-                if line:
-                    self.pose_entries.append(json.loads(line))
-        if not self.pose_entries:
-            raise ValueError(f"empty pose_jsonl: {pose_jsonl}")
+        if pose_jsonl:
+            with open(pose_jsonl, "r", encoding="utf-8") as f:
+                for line in f:
+                    line = line.strip()
+                    if line:
+                        self.pose_entries.append(json.loads(line))
+            if not self.pose_entries:
+                raise ValueError(f"empty pose_jsonl: {pose_jsonl}")
+        elif self.poses_per_image != 1:
+            raise ValueError("poses_per_image requires pose_jsonl")
 
         self._ann_roots = [
             r for r in (
@@ -112,7 +120,10 @@ class CustomI2VDataset(Dataset):
         reps = (n + int(t.shape[0]) - 1) // int(t.shape[0])
         return t.repeat(reps, *([1] * (t.dim() - 1)))[:n].contiguous()
 
-    def _load_cam(self, idx: int) -> torch.Tensor:
+    def _load_cam(self, idx: int) -> torch.Tensor | None:
+        if not self.pose_entries:
+            self._entry_intrinsic = None
+            return None
         # Deterministic pairing: pose = (image index + offset + group * stride) % N
         ent = self.pose_entries[self._pose_index(idx)]
         pp = self._resolve_pose(str(ent.get("pose_path", "")))
@@ -155,8 +166,8 @@ class CustomI2VDataset(Dataset):
             "intrinsic": intrinsic,
             "cam_c2w": cam_c2w,
             "intrinsic_raw": intrinsic.clone(),
-            "cam_c2w_raw": cam_c2w.clone(),
-            "has_camera": True,
+            "cam_c2w_raw": cam_c2w.clone() if cam_c2w is not None else None,
+            "has_camera": cam_c2w is not None,
             # True = caller supplied real intrinsics (used directly by the warp); False = placeholder + ViGeo fit
             "has_real_intrinsic": bool(_real_K is not None),
             "video_id": img_path.stem if self.poses_per_image == 1 else f"{img_path.stem}_p{group}",

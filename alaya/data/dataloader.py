@@ -328,9 +328,11 @@ def build_validation_dataset(
     if source_name == "custom_i2v":
         from alaya.data.custom_i2v import CustomI2VDataset
 
+        if not mode_cfg.dataset.pose_jsonl and (mode_cfg.control or cfg.spatial_memory.enabled):
+            raise ValueError("custom_i2v needs pose_jsonl when camera control or spatial memory is enabled")
         return CustomI2VDataset(
             image_dir=str(mode_cfg.dataset.image_dir),
-            pose_jsonl=str(mode_cfg.dataset.pose_jsonl),
+            pose_jsonl=mode_cfg.dataset.pose_jsonl,
             annotation_base_dir=mode_cfg.dataset.annotation_base_dir or cfg.paths.annotation_base_dir,
             width=mode_cfg.layout.width or cfg.sample.width,
             height=mode_cfg.layout.height or cfg.sample.height,
@@ -339,6 +341,7 @@ def build_validation_dataset(
             poses_per_image=int(getattr(mode_cfg.dataset, "poses_per_image", 1) or 1),
             pose_stride=int(getattr(mode_cfg.dataset, "pose_stride", 40) or 40),
             captions_json=getattr(mode_cfg.dataset, "captions_json", None),
+            prompt_file=mode_cfg.dataset.prompt_file,
         )
     if source_name == "wbench_navi":
         from alaya.data.wbench import WBenchNaviDataset

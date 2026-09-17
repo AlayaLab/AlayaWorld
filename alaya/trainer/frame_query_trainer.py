@@ -27,10 +27,10 @@ class FrameQueryTrainer(RolloutTrainer):
     spatial memory or next-forcing is involved.
     """
 
-    def setup(self) -> None:
+    def setup(self, *, validation_only: bool = False) -> None:
         if not self.cfg.frame_query.enabled:
             raise ValueError("FrameQueryTrainer requires frame_query.enabled=true")
-        RolloutTrainer.setup(self)
+        RolloutTrainer.setup(self, validation_only=validation_only)
         if self.history_encoder is None:
             raise RuntimeError(
                 "frame_query requires a HistoryEncoder (layout.history_latent_frames > 0), "

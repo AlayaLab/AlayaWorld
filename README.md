@@ -27,6 +27,7 @@
 
 ## 📰 News
 
+- **[2026-09-17]** Released the [Stage1 bidirectional checkpoint-12000](https://huggingface.co/AlayaLab/AlayaWorld-stage1), shared by the DA3 version and v1.1 ViGeo version, with image-to-video inference through the unified launcher.
 - **[2026-08-20]** **Interactive browser demo**: play AlayaWorld live — drive the camera from the keyboard and change the prompt mid-rollout, streamed as it generates. See [`reactor/`](reactor/README.md). Huge thanks to community contributors [@Dere-Wah](https://github.com/Dere-Wah) and [@Rising0321](https://github.com/Rising0321)!
 - **[2026-08-17]** Full-stack **training + inference code**, **v1.1 weights** (AR + DMD) and **partial training data** open-sourced, with the [v1.1 technical report](https://arxiv.org/abs/2608.13492). See the [Release Roadmap](#-release-roadmap).
 - **[2026-07-21]** [Full Technical Report](https://arxiv.org/abs/2607.18367) released.
@@ -37,6 +38,7 @@
 
 - [x] Inference code
 - [x] Pretrained weights — 🤗 [AlayaLab/AlayaWorld](https://huggingface.co/AlayaLab/AlayaWorld)
+- [x] Shared Stage1 bidirectional weights — 🤗 [AlayaWorld-stage1](https://huggingface.co/AlayaLab/AlayaWorld-stage1)
 - [x] Pretrained weights v1.1 — AR: 🤗 [AlayaWorld-v1.1-stage2b](https://huggingface.co/AlayaLab/AlayaWorld-v1.1-stage2b) · DMD: 🤗 [AlayaWorld-v1.1-stage3](https://huggingface.co/AlayaLab/AlayaWorld-v1.1-stage3)
 - [x] Training code
 - [x] Training data (partial) — 🤗 [AlayaWorld-v1.1-data](https://huggingface.co/datasets/AlayaLab/AlayaWorld-v1.1-data)
@@ -65,14 +67,14 @@ alaya/          world-model core: config / data / memory / model / trainers
 ltx2/           LTX-2.3 model stack (DiT / VAE / text encoder / camera control)
 fastvideo/      dataset + rollout utilities shared by training
 scripts/        finetune/train.sh (unified launcher) · infer/ helpers · tools/
-configs/        stage0–stage3 training + three inference configs
+configs/        stage0–stage3 training + four inference configs
 inference/      da3 case-demo CLI entry (run.sh / run.py)
 reactor/        serve the da3 path as a live, playable stream (+ browser demo)
 playground/     bundled demo case (case1)
 docs/vigeo/     full training handbook (data format, stages, knobs)
 ```
 
-One launcher drives everything — training, validation and all three inference
+One launcher drives everything — training, validation and all four inference
 paths — selected purely by the config:
 
 ```bash
@@ -97,7 +99,8 @@ pip install -e third_party/Depth-Anything-3
 | Piece | Used by | Source |
 |---|---|---|
 | `merged_infer.safetensors` — DiT+VAE+text-enc+history-enc bundle | da3 inference | 🤗 [AlayaLab/AlayaWorld](https://huggingface.co/AlayaLab/AlayaWorld) |
-| LTX-2.3 base (`ltx-2.3-22b-dev.safetensors`) | training, AR/DMD inference | 🤗 [Lightricks/LTX-2](https://huggingface.co/Lightricks/LTX-2) |
+| Stage1 bidirectional transformer (checkpoint-12000) | bidirectional I2V; shared pretraining checkpoint for DA3 and v1.1 ViGeo | 🤗 [AlayaWorld-stage1](https://huggingface.co/AlayaLab/AlayaWorld-stage1) |
+| LTX-2.3 base (`ltx-2.3-22b-dev.safetensors`) | training, bidirectional/AR/DMD inference | 🤗 [Lightricks/LTX-2](https://huggingface.co/Lightricks/LTX-2) |
 | AR teacher v1.1 (stage2b, full transformer) | AR inference, stage3 training | 🤗 [AlayaWorld-v1.1-stage2b](https://huggingface.co/AlayaLab/AlayaWorld-v1.1-stage2b) |
 | Few-step student v1.1 (stage3 LoRA) | DMD inference | 🤗 [AlayaWorld-v1.1-stage3](https://huggingface.co/AlayaLab/AlayaWorld-v1.1-stage3) |
 | Gemma text encoder | everything | 🤗 [google/gemma-3-12b-it-qat-q4_0-unquantized](https://huggingface.co/google/gemma-3-12b-it-qat-q4_0-unquantized) (gated) |
@@ -108,7 +111,29 @@ Weight paths live under `paths:` in each config — repoint them to where your
 downloads sit. See [`docs/vigeo/README.md`](docs/vigeo/README.md) for the full
 layout.
 
-**3. Inference** — three paths, one launch form:
+**The Stage1 bidirectional weights are shared by the DA3 version and the v1.1
+ViGeo version.** Both start from the same checkpoint-12000 before the later
+autoregressive and spatial-memory stages. Stage1 I2V itself uses neither DA3 nor
+ViGeo and needs no camera trajectory; the later AR/DMD checkpoints remain
+specific to their respective versions.
+
+For bidirectional inference, download the two checkpoint files into the directory
+expected by `configs/infer_i2v_bidir.yaml`:
+
+```bash
+hf download AlayaLab/AlayaWorld-stage1 \
+  config.json diffusion_pytorch_model.safetensors \
+  --local-dir weights/AlayaWorld-stage1/checkpoint-12000
+```
+
+Also place the LTX-2.3 base at `weights/ltx-2.3/ltx-2.3-22b-dev.safetensors`
+and Gemma at `weights/ltx-2.3/google/gemma-3-12b-it-qat-q4_0-unquantized`,
+or adjust `paths.base_transformer`, `paths.vae`, `paths.gemma` and
+`paths.resume_checkpoint` in the config. The Stage1 release contains only the
+transformer and its configuration; VAE and text-encoder dependencies are obtained
+separately.
+
+**3. Inference** — four paths, one launch form:
 
 ```bash
 # a) case demo (da3 spatial memory): first-frame image + camera.pt + prompt -> ~1 min video
@@ -122,9 +147,19 @@ VALIDATE_ONLY=1 CONFIG_PATH=configs/infer_i2v_camera_ar.yaml bash scripts/finetu
 
 # c) few-step student, 4-step (vigeo spatial memory)
 VALIDATE_ONLY=1 CONFIG_PATH=configs/infer_i2v_camera.yaml bash scripts/finetune/train.sh
+
+# d) bidirectional Stage1, 30-step (shared by DA3 and v1.1 ViGeo; image + prompt)
+VALIDATE_ONLY=1 CONFIG_PATH=configs/infer_i2v_bidir.yaml bash scripts/finetune/train.sh
 ```
 
-All three render a fixed trajectory to a file. To drive the camera and swap prompts
+Paths a–c render a fixed camera trajectory to a file. Path d generates one
+bidirectional I2V clip: by default, 481 frames at 960×544 and 24 fps (about 20
+seconds), using `playground/case1`. To use your own image and prompt, set
+`image_dir` and `prompt_file` under `validation.modes.i2v_bidir.dataset`;
+`captions_json` can supply per-image prompts. No pose file or spatial-memory
+checkpoint is needed for d).
+
+To drive the camera and swap prompts
 while generation runs, [`reactor/`](reactor/README.md) serves path a) as a live
 stream with a browser demo:
 
@@ -133,7 +168,7 @@ reactor build -f Dockerfile.reactor
 reactor run --gpus device=0 -e HF_TOKEN     # then reactor/demo for the UI
 ```
 
-Notes: b/c run through the trainer's validation loop, so they need
+Notes: b/c/d run through the trainer's validation loop, so they need
 `VALIDATE_ONLY=1`; a) dispatches straight to the inference pipeline
 (`da3_infer.enabled` in the config) and ignores it. The vigeo spatial path is
 incompatible with FA3 — launch with `ALAYA_USE_FA3=0` if you built FA3.

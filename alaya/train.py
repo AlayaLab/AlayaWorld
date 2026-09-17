@@ -64,7 +64,7 @@ def main() -> None:
         trainer.describe()
         return
     if args.validate_only:
-        trainer.setup()
+        trainer.setup(validation_only=True)
         trainer.validate(trainer.global_step)
         return
     trainer.train()

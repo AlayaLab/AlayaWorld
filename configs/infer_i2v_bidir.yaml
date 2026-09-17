@@ -1,0 +1,85 @@
+# Stage1 bidirectional I2V through the standard RolloutTrainer validation path.
+# Run from the repository root in the existing AlayaWorld environment:
+#   VALIDATE_ONLY=1 CONFIG_PATH=configs/infer_i2v_bidir.yaml bash scripts/finetune/train.sh
+# Optional: LOG_FILTER=all exposes loading and sampling progress.
+#
+# Download the shared DA3 / v1.1 ViGeo Stage1 checkpoint:
+#   hf download AlayaLab/AlayaWorld-stage1 config.json diffusion_pytorch_model.safetensors \
+#     --local-dir weights/AlayaWorld-stage1/checkpoint-12000
+# Base/VAE/Gemma paths follow the same convention as the other stage configs.
+# Change image_dir and prompt_file below for your inputs. captions_json can
+# provide per-image prompts instead. Camera trajectories and datasets are not needed.
+# One round = 60 generated latents + 1 conditioning latent = 481 frames (~20s).
+# Set output_latent_frames to change length; each generated latent adds 8 frames.
+run:
+  name: infer_i2v_bidir
+  seed: 42
+  output_dir: outputs/infer_i2v_bidir_unified
+  log_dir: logs/infer_i2v_bidir
+paths:
+  base_transformer: weights/ltx-2.3/ltx-2.3-22b-dev.safetensors
+  vae: weights/ltx-2.3/ltx-2.3-22b-dev.safetensors
+  gemma: weights/ltx-2.3/google/gemma-3-12b-it-qat-q4_0-unquantized
+  resume_checkpoint: weights/AlayaWorld-stage1/checkpoint-12000
+sample:
+  height: 544
+  width: 960
+  fps: 24
+  temporal_stride: 8
+layout:
+  sink_latent_frames: 0
+  history_latent_frames: 0
+  max_gap_sec: 0
+  condition:
+    type: inline
+    i2v_prob: 1.0
+    v2v_prob: 0.0
+  output:
+    latent_frames: [60]
+    probs: [1.0]
+training:
+  mode: sft
+  adaptive_sigma_shift: true
+  adaptive_shift_m_lo: 3.0
+  adaptive_shift_m_hi: 15.0
+  adaptive_shift_frame_lo: 8
+  adaptive_shift_frame_hi: 121
+lora:
+  enabled: false
+validation:
+  enabled: true
+  max_samples: 1
+  sampling_steps: 30
+  scheduler: shift
+  cfg_scale: 3.0
+  stg_scale: 1.0
+  stg_blocks: [28]
+  rescale_scale: 0.7
+  save_videos: true
+  save_joystick: false
+  modes:
+    i2v_bidir:
+      dataset:
+        source: custom_i2v
+        image_dir: playground/case1
+        prompt_file: playground/case1/case1_prompt.txt
+        pose_jsonl: null
+      layout:
+        condition: i2v
+        condition_latent_frames: 1
+        history_latent_frames: 0
+        output_latent_frames: 60
+        max_gap_sec: 0
+      control: []
+      use_memory: false
+      rollout_rounds: 1
+      all_samples: true
+runtime:
+  dtype: bf16
+  gradient_checkpointing: false
+  fsdp: false
+  norm_by_fps: true
+  norm_by_max_frames: true
+  positional_embedding_max_pos: 20,2048,2048
+  vae_decode_chunk_latents: 8
+  vae_decode_overlap_latents: 12

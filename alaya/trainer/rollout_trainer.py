@@ -200,7 +200,7 @@ class RolloutTrainer:
             raise RuntimeError(f"rank {rank} did not execute serialized load for {label}")
         return result
 
-    def setup(self) -> None:
+    def setup(self, *, validation_only: bool = False) -> None:
         Path(self.cfg.run.output_dir).mkdir(parents=True, exist_ok=True)
         self.components = self._run_rank_serialized_load(
             "model components",
@@ -267,6 +267,12 @@ class RolloutTrainer:
                 self.dist.device,
             )
             rank0_print(self.dist, "[DMD]", "score_model FSDP sharding enabled")
+
+        if validation_only:
+            rank0_print(self.dist, "[Setup] validation only: skipping optimizer, training data and error bank")
+            self._release_cpu_load_memory()
+            self._cleanup_cuda_cache()
+            return
 
         trainable, param_groups = self._optimizer_parameters()
         if self.components.lora_manager is not None:
@@ -1107,6 +1113,11 @@ class RolloutTrainer:
             raise ValueError(f"validation mode {mode_name} needs memory/history, but training layout disabled memory")
         explicit_condition = cond_end if N == 0 else 0
         dynamic_rounds = bool(getattr(self.cfg.validation, "dynamic_rounds", False))
+        if self.cfg.layout.condition.type == "inline" and (
+            N or self.cfg.layout.sink_latent_frames or gap_steps or requested_rounds != 1
+            or mode_cfg.control or self.cfg.spatial_memory.enabled
+        ):
+            raise ValueError("inline validation requires one round, no history/sink/gap, and no camera/spatial control")
 
         def _needed_pixels_for_rounds(rounds: int) -> tuple[int, int, int]:
             if self._uses_vigeo_prefix_last_frame():
@@ -2153,7 +2164,9 @@ class RolloutTrainer:
             if sink_count > 0
             else None
         )
-        sigmas = self._validation_sigmas(latent_frames=int(K))
+        inline = self.cfg.layout.condition.type == "inline"
+        sample_frames = K + explicit_condition if inline else K
+        sigmas = self._validation_sigmas(latent_frames=int(sample_frames))
         stg_perturbations = self._validation_stg_perturbations()
         actual_cfg_scale = self._validation_cfg_scale()
         metrics = []
@@ -2330,7 +2343,15 @@ class RolloutTrainer:
                     dtype=self.dtype,
                 )
 
-            x_t = torch.randn(B, latent_full.shape[1], K, H_lat, W_lat, device=self.dist.device, dtype=self.dtype)
+            if inline:
+                generator = torch.Generator(device=self.dist.device).manual_seed(self.cfg.run.seed + self.dist.rank)
+                x_t = torch.randn(B, latent_full.shape[1], sample_frames, H_lat, W_lat,
+                                  device=self.dist.device, dtype=torch.float32, generator=generator).to(self.dtype)
+                if explicit_condition:
+                    x_t[:, :, :explicit_condition] = explicit_nearby
+            else:
+                x_t = torch.randn(B, latent_full.shape[1], K, H_lat, W_lat, device=self.dist.device, dtype=self.dtype)
+            sampling_started = time.monotonic()
             for sample_step in range(len(sigmas) - 1):
                 sigma_now = sigmas[sample_step]
                 sigma_next = sigmas[sample_step + 1]
@@ -2343,21 +2364,24 @@ class RolloutTrainer:
                 ) -> torch.Tensor:
                     return self.components.transformer(
                         x=[x_t.squeeze(0)],
-                        t=(sigma_now * 1000.0).view(1).to(device=self.dist.device, dtype=x_t.dtype),
+                        t=(sigma_now * 1000.0).view(1).to(
+                            device=self.dist.device, dtype=torch.float32 if inline else x_t.dtype
+                        ),
                         context=[context_tensor],
-                        seq_len=K * H_lat * W_lat,
+                        seq_len=sample_frames * H_lat * W_lat,
                         fps=self.cfg.sample.fps,
                         perturbations=perturbations,
                         history_kv_tokens=mem_tokens,
                         history_indices_grid=mem_indices,
-                        gen_t_indices_override=current_target_rope_t_indices,
+                        gen_t_indices_override=None if inline else current_target_rope_t_indices,
+                        cond_latent_frames=explicit_condition if inline else 0,
                         sink_latent=sink_latent,
                         sink_indices_grid=sink_indices,
                         spatial_latent=spatial_latent,
                         spatial_mask_patch=spatial_mask_patch,
                         spatial_indices_grid=spatial_indices,
-                        nearby_latent=nearby_latent,
-                        nearby_indices_grid=nearby_indices,
+                        nearby_latent=None if inline else nearby_latent,
+                        nearby_indices_grid=None if inline else nearby_indices,
                         **control,
                     )
 
@@ -2387,13 +2411,21 @@ class RolloutTrainer:
                     factor = float(self.cfg.validation.rescale_scale) * factor + (1.0 - float(self.cfg.validation.rescale_scale))
                     pred_v = pred_v * factor
 
-                if sigma_next.item() > 1e-5:
+                if inline:
+                    x_t = (x_t.float() + pred_v.float() * (sigma_next - sigma_now)).to(x_t.dtype)
+                    if explicit_condition:
+                        x_t[:, :, :explicit_condition] = explicit_nearby
+                    if not torch.isfinite(x_t).all():
+                        raise RuntimeError(f"Non-finite inline validation latent at step {sample_step + 1}")
+                    rank0_print(self.dist, "[Validation]", f"inline step={sample_step + 1}/{len(sigmas) - 1} "
+                                f"elapsed={time.monotonic() - sampling_started:.1f}s")
+                elif sigma_next.item() > 1e-5:
                     dt = (sigma_now - sigma_next).to(dtype=x_t.dtype)
                     x_t = x_t - dt * pred_v
                 else:
                     x_t = (x_t.float() - pred_v.float() * sigma_now.float()).to(x_t.dtype)
 
-            pred = x_t
+            pred = x_t[:, :, explicit_condition:] if inline else x_t
             if (
                 bool(getattr(self.cfg.validation, "vigeo_seam_dc_correct", False))
                 and vigeo_prefix_mode
@@ -2438,6 +2470,13 @@ class RolloutTrainer:
                 "spatial_condition_available": bool(spatial_latent is not None),
                 "spatial_forced_invalid": bool(force_spatial_invalid),
             }
+            if inline:
+                metric["condition_type"] = "inline"
+                metric["sampling_seconds"] = time.monotonic() - sampling_started
+                metric["condition_latent_max_error"] = (
+                    float((x_t[:, :, :explicit_condition] - explicit_nearby).abs().max())
+                    if explicit_condition else 0.0
+                )
             prompt_label = self._validation_prompt_label(mode_cfg=mode_cfg, round_idx=round_idx)
             if prompt_label is not None:
                 metric["prompt_label"] = prompt_label
@@ -3021,16 +3060,26 @@ class RolloutTrainer:
         decoder = self.components.vae_decoder
         decode_chunk = self.cfg.runtime.vae_decode_chunk_latents
         chunk_latents = max(1, int(decode_chunk if decode_chunk is not None else self.cfg.runtime.vae_chunk_size))
+        overlap = max(0, int(self.cfg.runtime.vae_decode_overlap_latents))
         frames = []
         total_latents = int(latent.shape[2])
         for start in range(0, total_latents, chunk_latents):
             end = min(total_latents, start + chunk_latents)
-            chunk = latent[:, :, start:end].to(device=self.dist.device, dtype=self.dtype)
+            left = max(0, start - overlap)
+            right = min(total_latents, end + overlap)
+            chunk = latent[:, :, left:right].to(device=self.dist.device, dtype=self.dtype)
             with torch.no_grad():
                 pixel = decoder(chunk)
             pixel = (pixel * 0.5 + 0.5).clamp(0, 1)
             chunk_frames = pixel.squeeze(0).permute(1, 2, 3, 0).contiguous()
-            if start > 0 and chunk_frames.shape[0] > 0:
+            if overlap:
+                # A sub-decode's first latent yields one frame; subsequent ones
+                # yield stride frames. Keep the core and discard overlap context.
+                stride = int(self.cfg.sample.temporal_stride)
+                lo = 0 if start == 0 else stride * (start - left - 1) + 1
+                hi = stride * (end - left - 1) + 1
+                chunk_frames = chunk_frames[lo:hi]
+            elif start > 0 and chunk_frames.shape[0] > 0:
                 chunk_frames = chunk_frames[1:]
             frames.append((chunk_frames * 255.0).to(torch.uint8).cpu())
             del chunk, pixel, chunk_frames

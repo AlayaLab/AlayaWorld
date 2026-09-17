@@ -27,6 +27,7 @@
 
 ## 📰 最新动态
 
+- **[2026-09-17]** 发布 DA3 版本与 v1.1 ViGeo 版本共享的 [Stage1 双向 checkpoint-12000](https://huggingface.co/AlayaLab/AlayaWorld-stage1)，支持通过统一启动器进行图生视频推理。
 - **[2026-08-20]** 支持**交互式浏览器 demo**:实时游玩 AlayaWorld——键盘开车、边生成边改 prompt、边生成边播放。见 [`reactor/`](reactor/README.md)。特别感谢社区贡献者 [@Dere-Wah](https://github.com/Dere-Wah) 与 [@Rising0321](https://github.com/Rising0321)!
 - **[2026-08-17]** 开源**全栈训练+推理代码**、**v1.1 权重**(AR + DMD)与**部分训练数据**,同步发布 [v1.1 技术报告](https://arxiv.org/abs/2608.13492)。见[发布路线图](#-发布路线图)。
 - **[2026-07-21]** 发布[完整技术报告](https://arxiv.org/abs/2607.18367)。
@@ -37,6 +38,7 @@
 
 - [x] 推理代码
 - [x] 预训练权重 — 🤗 [AlayaLab/AlayaWorld](https://huggingface.co/AlayaLab/AlayaWorld)
+- [x] 共享 Stage1 双向权重 — 🤗 [AlayaWorld-stage1](https://huggingface.co/AlayaLab/AlayaWorld-stage1)
 - [x] 预训练权重 v1.1 — AR:🤗 [AlayaWorld-v1.1-stage2b](https://huggingface.co/AlayaLab/AlayaWorld-v1.1-stage2b) · DMD:🤗 [AlayaWorld-v1.1-stage3](https://huggingface.co/AlayaLab/AlayaWorld-v1.1-stage3)
 - [x] 训练代码
 - [x] 训练数据(部分)— 🤗 [AlayaWorld-v1.1-data](https://huggingface.co/datasets/AlayaLab/AlayaWorld-v1.1-data)
@@ -65,14 +67,14 @@ alaya/          世界模型核心:config / data / memory / model / 训练器
 ltx2/           LTX-2.3 模型栈(DiT / VAE / 文本编码器 / 相机控制)
 fastvideo/      训练共用的数据集与 rollout 工具
 scripts/        finetune/train.sh(统一启动器)· infer/ 辅助 · tools/
-configs/        stage0–stage3 训练 + 三条推理配置
+configs/        stage0–stage3 训练 + 四条推理配置
 inference/      da3 case-demo 命令行入口(run.sh / run.py)
 reactor/        把 da3 路径变成可实时游玩的直播流(含浏览器 demo)
 playground/     内置演示用例(case1)
 docs/vigeo/     完整训练手册(数据格式、各阶段、启动器参数)
 ```
 
-一个启动器驱动一切——训练、验证、三条推理路,全部由配置选择:
+一个启动器驱动一切——训练、验证、四条推理路径,全部由配置选择:
 
 ```bash
 CONFIG_PATH=configs/<任意>.yaml bash scripts/finetune/train.sh
@@ -95,7 +97,8 @@ pip install -e third_party/Depth-Anything-3
 | 组件 | 用于 | 来源 |
 |---|---|---|
 | `merged_infer.safetensors` — DiT+VAE+文本编码器+历史编码器 打包 | da3 推理 | 🤗 [AlayaLab/AlayaWorld](https://huggingface.co/AlayaLab/AlayaWorld) |
-| LTX-2.3 底座(`ltx-2.3-22b-dev.safetensors`)| 训练、AR/DMD 推理 | 🤗 [Lightricks/LTX-2](https://huggingface.co/Lightricks/LTX-2) |
+| Stage1 双向 transformer（checkpoint-12000）| 双向 I2V；DA3 与 v1.1 ViGeo 共享的预训练 checkpoint | 🤗 [AlayaWorld-stage1](https://huggingface.co/AlayaLab/AlayaWorld-stage1) |
+| LTX-2.3 底座(`ltx-2.3-22b-dev.safetensors`)| 训练、双向/AR/DMD 推理 | 🤗 [Lightricks/LTX-2](https://huggingface.co/Lightricks/LTX-2) |
 | AR teacher v1.1(stage2b,完整 transformer)| AR 推理、stage3 训练 | 🤗 [AlayaWorld-v1.1-stage2b](https://huggingface.co/AlayaLab/AlayaWorld-v1.1-stage2b) |
 | 少步 student v1.1(stage3 LoRA)| DMD 推理 | 🤗 [AlayaWorld-v1.1-stage3](https://huggingface.co/AlayaLab/AlayaWorld-v1.1-stage3) |
 | Gemma 文本编码器 | 全部 | 🤗 [google/gemma-3-12b-it-qat-q4_0-unquantized](https://huggingface.co/google/gemma-3-12b-it-qat-q4_0-unquantized)(受限)|
@@ -105,7 +108,26 @@ pip install -e third_party/Depth-Anything-3
 权重路径都在各配置的 `paths:` 下——按你的下载位置改。完整目录规划见
 [`docs/vigeo/README.md`](docs/vigeo/README.md)。
 
-**3. 推理** —— 三条路,同一种启动形式:
+**DA3 版本与 v1.1 ViGeo 版本共享同一份 Stage1 双向权重。** 两者都从
+checkpoint-12000 进入后续自回归和空间记忆训练阶段。Stage1 双向 I2V 本身不使用
+DA3 或 ViGeo，也不需要相机轨迹；后续 AR/DMD 权重仍对应各自版本。
+
+双向推理所需的两个 checkpoint 文件可下载到 `configs/infer_i2v_bidir.yaml`
+默认使用的目录：
+
+```bash
+hf download AlayaLab/AlayaWorld-stage1 \
+  config.json diffusion_pytorch_model.safetensors \
+  --local-dir weights/AlayaWorld-stage1/checkpoint-12000
+```
+
+另外，将 LTX-2.3 底座放到 `weights/ltx-2.3/ltx-2.3-22b-dev.safetensors`，
+Gemma 放到 `weights/ltx-2.3/google/gemma-3-12b-it-qat-q4_0-unquantized`；
+也可按实际位置修改配置中的 `paths.base_transformer`、`paths.vae`、`paths.gemma`
+和 `paths.resume_checkpoint`。Stage1 发布内容仅包含 transformer 及其配置，
+VAE 和文本编码器依赖需单独获取。
+
+**3. 推理** —— 四条路径，同一种启动形式:
 
 ```bash
 # a) case demo(da3 空间记忆):首帧图 + camera.pt + prompt -> 约 1 分钟视频
@@ -119,9 +141,18 @@ VALIDATE_ONLY=1 CONFIG_PATH=configs/infer_i2v_camera_ar.yaml bash scripts/finetu
 
 # c) 少步 student,4 步(vigeo 空间记忆)
 VALIDATE_ONLY=1 CONFIG_PATH=configs/infer_i2v_camera.yaml bash scripts/finetune/train.sh
+
+# d) Stage1 双向模型，30 步（DA3 与 v1.1 ViGeo 共享；图片 + 提示词）
+VALIDATE_ONLY=1 CONFIG_PATH=configs/infer_i2v_bidir.yaml bash scripts/finetune/train.sh
 ```
 
-以上三条都是按固定轨迹渲染成文件。想边生成边开车、随时改 prompt,
+a–c 按固定相机轨迹渲染成文件。d 生成单段双向 I2V 视频：默认使用
+`playground/case1`，输出 481 帧、960×544、24fps（约 20 秒）。使用自己的图片和
+提示词时，修改 `validation.modes.i2v_bidir.dataset` 下的 `image_dir` 和
+`prompt_file`；也可用 `captions_json` 为每张图指定提示词。d 不需要 pose 文件或
+空间记忆模型权重。
+
+想边生成边开车、随时改 prompt,
 [`reactor/`](reactor/README.md) 把 a) 这条路径做成了实时流并配了浏览器 demo:
 
 ```bash
@@ -129,7 +160,7 @@ reactor build -f Dockerfile.reactor
 reactor run --gpus device=0 -e HF_TOKEN     # 然后进 reactor/demo 起前端
 ```
 
-说明:b/c 走训练器的验证循环,必须带 `VALIDATE_ONLY=1`;a) 由配置里的
+说明:b/c/d 走训练器的验证循环,必须带 `VALIDATE_ONLY=1`;a) 由配置里的
 `da3_infer.enabled` 直接分派进推理管线,该变量对它无效。vigeo 空间路径与 FA3
 不兼容——如果你编译了 FA3,启动时加 `ALAYA_USE_FA3=0`。
 

@@ -441,6 +441,7 @@ class ValidationDatasetConfig:
     poses_per_image: int = 1
     pose_stride: int = 40
     captions_json: str | None = None
+    prompt_file: str | None = None     # optional shared prompt for custom_i2v images
 
 
 @dataclass

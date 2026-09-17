@@ -30,11 +30,12 @@ class DmdTrainer(DmdSelfRolloutMixin, RolloutTrainer):
         super().__init__(cfg)
         self.critic_optimizer = None
 
-    def setup(self) -> None:
+    def setup(self, *, validation_only: bool = False) -> None:
         if not self.cfg.dmd.enabled:
             raise ValueError("DmdTrainer requires dmd.enabled=true")
-        super().setup()
-        self._setup_dmd()
+        super().setup(validation_only=validation_only)
+        if not validation_only:
+            self._setup_dmd()
 
     def _setup_dmd(self) -> None:
         if self.components is None:
