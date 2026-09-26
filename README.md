@@ -27,7 +27,7 @@
 
 ## 📰 News
 
-- **[2026-09-17]** Released the [Stage1 bidirectional checkpoint-12000](https://huggingface.co/AlayaLab/AlayaWorld-stage1), shared by the DA3 version and v1.1 ViGeo version, with image-to-video inference through the unified launcher.
+- **[2026-09-26]** Released the [Stage1 bidirectional checkpoint-12000](https://huggingface.co/AlayaLab/AlayaWorld-stage1), shared by the DA3 version and v1.1 ViGeo version, with image-to-video inference through the unified launcher.
 - **[2026-08-20]** **Interactive browser demo**: play AlayaWorld live — drive the camera from the keyboard and change the prompt mid-rollout, streamed as it generates. See [`reactor/`](reactor/README.md). Huge thanks to community contributors [@Dere-Wah](https://github.com/Dere-Wah) and [@Rising0321](https://github.com/Rising0321)!
 - **[2026-08-17]** Full-stack **training + inference code**, **v1.1 weights** (AR + DMD) and **partial training data** open-sourced, with the [v1.1 technical report](https://arxiv.org/abs/2608.13492). See the [Release Roadmap](#-release-roadmap).
 - **[2026-07-21]** [Full Technical Report](https://arxiv.org/abs/2607.18367) released.

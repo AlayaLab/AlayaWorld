@@ -27,7 +27,7 @@
 
 ## 📰 最新动态
 
-- **[2026-09-17]** 发布 DA3 版本与 v1.1 ViGeo 版本共享的 [Stage1 双向 checkpoint-12000](https://huggingface.co/AlayaLab/AlayaWorld-stage1)，支持通过统一启动器进行图生视频推理。
+- **[2026-09-26]** 发布 DA3 版本与 v1.1 ViGeo 版本共享的 [Stage1 双向 checkpoint-12000](https://huggingface.co/AlayaLab/AlayaWorld-stage1)，支持通过统一启动器进行图生视频推理。
 - **[2026-08-20]** 支持**交互式浏览器 demo**:实时游玩 AlayaWorld——键盘开车、边生成边改 prompt、边生成边播放。见 [`reactor/`](reactor/README.md)。特别感谢社区贡献者 [@Dere-Wah](https://github.com/Dere-Wah) 与 [@Rising0321](https://github.com/Rising0321)!
 - **[2026-08-17]** 开源**全栈训练+推理代码**、**v1.1 权重**(AR + DMD)与**部分训练数据**,同步发布 [v1.1 技术报告](https://arxiv.org/abs/2608.13492)。见[发布路线图](#-发布路线图)。
 - **[2026-07-21]** 发布[完整技术报告](https://arxiv.org/abs/2607.18367)。
