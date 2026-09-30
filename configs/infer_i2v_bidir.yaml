@@ -5,7 +5,7 @@
 #
 # Download the shared DA3 / v1.1 ViGeo Stage1 checkpoint:
 #   hf download AlayaLab/AlayaWorld-stage1 config.json diffusion_pytorch_model.safetensors \
-#     --local-dir weights/AlayaWorld-stage1/checkpoint-12000
+#     --local-dir weights/AlayaWorld-stage1
 # Base/VAE/Gemma paths follow the same convention as the other stage configs.
 # Change image_dir and prompt_file below for your inputs. captions_json can
 # provide per-image prompts instead. Camera trajectories and datasets are not needed.
@@ -20,7 +20,7 @@ paths:
   base_transformer: weights/ltx-2.3/ltx-2.3-22b-dev.safetensors
   vae: weights/ltx-2.3/ltx-2.3-22b-dev.safetensors
   gemma: weights/ltx-2.3/google/gemma-3-12b-it-qat-q4_0-unquantized
-  resume_checkpoint: weights/AlayaWorld-stage1/checkpoint-12000
+  resume_checkpoint: weights/AlayaWorld-stage1
 sample:
   height: 544
   width: 960

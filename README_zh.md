@@ -27,7 +27,7 @@
 
 ## 📰 最新动态
 
-- **[2026-09-26]** 发布 DA3 版本与 v1.1 ViGeo 版本共享的 [Stage1 双向 checkpoint-12000](https://huggingface.co/AlayaLab/AlayaWorld-stage1)，支持通过统一启动器进行图生视频推理。
+- **[2026-09-26]** 发布 DA3 版本与 v1.1 ViGeo 版本共享的 [Stage1 双向权重](https://huggingface.co/AlayaLab/AlayaWorld-stage1)，支持通过统一启动器进行图生视频推理。
 - **[2026-08-20]** 支持**交互式浏览器 demo**:实时游玩 AlayaWorld——键盘开车、边生成边改 prompt、边生成边播放。见 [`reactor/`](reactor/README.md)。特别感谢社区贡献者 [@Dere-Wah](https://github.com/Dere-Wah) 与 [@Rising0321](https://github.com/Rising0321)!
 - **[2026-08-17]** 开源**全栈训练+推理代码**、**v1.1 权重**(AR + DMD)与**部分训练数据**,同步发布 [v1.1 技术报告](https://arxiv.org/abs/2608.13492)。见[发布路线图](#-发布路线图)。
 - **[2026-07-21]** 发布[完整技术报告](https://arxiv.org/abs/2607.18367)。
@@ -97,7 +97,7 @@ pip install -e third_party/Depth-Anything-3
 | 组件 | 用于 | 来源 |
 |---|---|---|
 | `merged_infer.safetensors` — DiT+VAE+文本编码器+历史编码器 打包 | da3 推理 | 🤗 [AlayaLab/AlayaWorld](https://huggingface.co/AlayaLab/AlayaWorld) |
-| Stage1 双向 transformer（checkpoint-12000）| 双向 I2V；DA3 与 v1.1 ViGeo 共享的预训练 checkpoint | 🤗 [AlayaWorld-stage1](https://huggingface.co/AlayaLab/AlayaWorld-stage1) |
+| Stage1 双向 transformer | 双向 I2V；DA3 与 v1.1 ViGeo 共享的预训练 checkpoint | 🤗 [AlayaWorld-stage1](https://huggingface.co/AlayaLab/AlayaWorld-stage1) |
 | LTX-2.3 底座(`ltx-2.3-22b-dev.safetensors`)| 训练、双向/AR/DMD 推理 | 🤗 [Lightricks/LTX-2](https://huggingface.co/Lightricks/LTX-2) |
 | AR teacher v1.1(stage2b,完整 transformer)| AR 推理、stage3 训练 | 🤗 [AlayaWorld-v1.1-stage2b](https://huggingface.co/AlayaLab/AlayaWorld-v1.1-stage2b) |
 | 少步 student v1.1(stage3 LoRA)| DMD 推理 | 🤗 [AlayaWorld-v1.1-stage3](https://huggingface.co/AlayaLab/AlayaWorld-v1.1-stage3) |
@@ -109,7 +109,7 @@ pip install -e third_party/Depth-Anything-3
 [`docs/vigeo/README.md`](docs/vigeo/README.md)。
 
 **DA3 版本与 v1.1 ViGeo 版本共享同一份 Stage1 双向权重。** 两者都从
-checkpoint-12000 进入后续自回归和空间记忆训练阶段。Stage1 双向 I2V 本身不使用
+Stage1 checkpoint 进入后续自回归和空间记忆训练阶段。Stage1 双向 I2V 本身不使用
 DA3 或 ViGeo，也不需要相机轨迹；后续 AR/DMD 权重仍对应各自版本。
 
 双向推理所需的两个 checkpoint 文件可下载到 `configs/infer_i2v_bidir.yaml`
@@ -118,7 +118,7 @@ DA3 或 ViGeo，也不需要相机轨迹；后续 AR/DMD 权重仍对应各自�
 ```bash
 hf download AlayaLab/AlayaWorld-stage1 \
   config.json diffusion_pytorch_model.safetensors \
-  --local-dir weights/AlayaWorld-stage1/checkpoint-12000
+  --local-dir weights/AlayaWorld-stage1
 ```
 
 另外，将 LTX-2.3 底座放到 `weights/ltx-2.3/ltx-2.3-22b-dev.safetensors`，

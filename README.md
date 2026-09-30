@@ -27,7 +27,7 @@
 
 ## 📰 News
 
-- **[2026-09-26]** Released the [Stage1 bidirectional checkpoint-12000](https://huggingface.co/AlayaLab/AlayaWorld-stage1), shared by the DA3 version and v1.1 ViGeo version, with image-to-video inference through the unified launcher.
+- **[2026-09-26]** Released the [Stage1 bidirectional weights](https://huggingface.co/AlayaLab/AlayaWorld-stage1), shared by the DA3 version and v1.1 ViGeo version, with image-to-video inference through the unified launcher.
 - **[2026-08-20]** **Interactive browser demo**: play AlayaWorld live — drive the camera from the keyboard and change the prompt mid-rollout, streamed as it generates. See [`reactor/`](reactor/README.md). Huge thanks to community contributors [@Dere-Wah](https://github.com/Dere-Wah) and [@Rising0321](https://github.com/Rising0321)!
 - **[2026-08-17]** Full-stack **training + inference code**, **v1.1 weights** (AR + DMD) and **partial training data** open-sourced, with the [v1.1 technical report](https://arxiv.org/abs/2608.13492). See the [Release Roadmap](#-release-roadmap).
 - **[2026-07-21]** [Full Technical Report](https://arxiv.org/abs/2607.18367) released.
@@ -99,7 +99,7 @@ pip install -e third_party/Depth-Anything-3
 | Piece | Used by | Source |
 |---|---|---|
 | `merged_infer.safetensors` — DiT+VAE+text-enc+history-enc bundle | da3 inference | 🤗 [AlayaLab/AlayaWorld](https://huggingface.co/AlayaLab/AlayaWorld) |
-| Stage1 bidirectional transformer (checkpoint-12000) | bidirectional I2V; shared pretraining checkpoint for DA3 and v1.1 ViGeo | 🤗 [AlayaWorld-stage1](https://huggingface.co/AlayaLab/AlayaWorld-stage1) |
+| Stage1 bidirectional transformer | bidirectional I2V; shared pretraining checkpoint for DA3 and v1.1 ViGeo | 🤗 [AlayaWorld-stage1](https://huggingface.co/AlayaLab/AlayaWorld-stage1) |
 | LTX-2.3 base (`ltx-2.3-22b-dev.safetensors`) | training, bidirectional/AR/DMD inference | 🤗 [Lightricks/LTX-2](https://huggingface.co/Lightricks/LTX-2) |
 | AR teacher v1.1 (stage2b, full transformer) | AR inference, stage3 training | 🤗 [AlayaWorld-v1.1-stage2b](https://huggingface.co/AlayaLab/AlayaWorld-v1.1-stage2b) |
 | Few-step student v1.1 (stage3 LoRA) | DMD inference | 🤗 [AlayaWorld-v1.1-stage3](https://huggingface.co/AlayaLab/AlayaWorld-v1.1-stage3) |
@@ -112,7 +112,7 @@ downloads sit. See [`docs/vigeo/README.md`](docs/vigeo/README.md) for the full
 layout.
 
 **The Stage1 bidirectional weights are shared by the DA3 version and the v1.1
-ViGeo version.** Both start from the same checkpoint-12000 before the later
+ViGeo version.** Both start from the same Stage1 checkpoint before the later
 autoregressive and spatial-memory stages. Stage1 I2V itself uses neither DA3 nor
 ViGeo and needs no camera trajectory; the later AR/DMD checkpoints remain
 specific to their respective versions.
@@ -123,7 +123,7 @@ expected by `configs/infer_i2v_bidir.yaml`:
 ```bash
 hf download AlayaLab/AlayaWorld-stage1 \
   config.json diffusion_pytorch_model.safetensors \
-  --local-dir weights/AlayaWorld-stage1/checkpoint-12000
+  --local-dir weights/AlayaWorld-stage1
 ```
 
 Also place the LTX-2.3 base at `weights/ltx-2.3/ltx-2.3-22b-dev.safetensors`
