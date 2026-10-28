@@ -127,6 +127,15 @@ Gemma 放到 `weights/ltx-2.3/google/gemma-3-12b-it-qat-q4_0-unquantized`；
 和 `paths.resume_checkpoint`。Stage1 发布内容仅包含 transformer 及其配置，
 VAE 和文本编码器依赖需单独获取。
 
+v1.1 的 AR 和 DMD 推理（下文 b、c）需将 stage2b、stage3 两个仓库整仓下载到
+`configs/infer_i2v_camera_ar.yaml` 与 `configs/infer_i2v_camera.yaml` 默认使用的目录。
+DMD student 是叠加在 AR teacher 上的 LoRA，因此 c 需要两者都下载：
+
+```bash
+hf download AlayaLab/AlayaWorld-v1.1-stage2b --local-dir weights/alaya-world-ar   # AR teacher，26GB
+hf download AlayaLab/AlayaWorld-v1.1-stage3 --local-dir weights/alaya-world-dmd   # 4 步 student LoRA，2.6GB
+```
+
 **3. 推理** —— 四条路径，同一种启动形式:
 
 ```bash

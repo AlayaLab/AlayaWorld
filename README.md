@@ -133,6 +133,16 @@ or adjust `paths.base_transformer`, `paths.vae`, `paths.gemma` and
 transformer and its configuration; VAE and text-encoder dependencies are obtained
 separately.
 
+For the v1.1 AR and DMD paths (b and c below), download the stage2b and stage3
+repositories into the directories expected by `configs/infer_i2v_camera_ar.yaml`
+and `configs/infer_i2v_camera.yaml`. The DMD student is a LoRA on top of the AR
+teacher, so c) needs both:
+
+```bash
+hf download AlayaLab/AlayaWorld-v1.1-stage2b --local-dir weights/alaya-world-ar   # AR teacher, 26GB
+hf download AlayaLab/AlayaWorld-v1.1-stage3 --local-dir weights/alaya-world-dmd   # 4-step student LoRA, 2.6GB
+```
+
 **3. Inference** — four paths, one launch form:
 
 ```bash
